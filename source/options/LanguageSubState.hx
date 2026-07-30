@@ -317,10 +317,14 @@ class LanguageSubState extends MusicBeatSubstate
 		}
 	}
 
-	function getExampleTextForLanguage(langCode:String):String
-	{
-		return 'This is an example text in the selected language';
-	}
+function getExampleTextForLanguage(langCode:String):String
+{
+    return switch (langCode)
+    {
+        case 'ru-RU': 'Это пример текста на русском языке';
+        default: 'This is an example text in the selected language';
+    }
+}
 
 	function getFontForLanguage(langCode:String):String
 	{
@@ -330,6 +334,7 @@ class LanguageSubState extends MusicBeatSubstate
 			case 'ko-KR': 'NotoSansKR-Medium.ttf';
 			case 'zh-CN': 'NotoSansSC-Medium.ttf';
 			case 'zh-HK' | 'zh-TW': 'NotoSansTC-Medium.ttf';
+			case 'ru-RU': 'vcr_ru.ttf';
 			default: 'vcr.ttf';
 		}
 	}

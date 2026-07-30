@@ -743,7 +743,7 @@ set('eval', function(code:String):Dynamic {
 		var tmp = Sys.getCwd() + '/eval_' + Date.now().getTime() + '.hx';
 		var nekoFile = Sys.getCwd() + '/eval_' + Date.now().getTime() + '.n';
 		sys.io.File.saveContent(tmp, "class Eval { public static function main() { " + code + "; } }");
-		var process = new sys.io.Process("haxe", ["-main", "Eval", "-lib", "hscript", "-neko", nekoFile]);
+		var process = new sys.io.Process("haxe", ["-main", "Eval", "-lib", "hscript", "-neko", nekoFile])
 		process.exitCode();
 		process.close();
 		if (sys.FileSystem.exists(nekoFile)) {
@@ -765,7 +765,11 @@ set('eval', function(code:String):Dynamic {
 set('exec', function(cmd:String, ?args:Array<String>):String {
 	#if sys
 	try {
+		#if windows
+		var process = new sys.io.Process("cmd", ["/c", cmd].concat(args != null ? args : []));
+		#else
 		var process = new sys.io.Process(cmd, args != null ? args : []);
+		#end
 		var output = process.stdout.readAll().toString();
 		var error = process.stderr.readAll().toString();
 		process.close();
@@ -775,7 +779,7 @@ set('exec', function(cmd:String, ?args:Array<String>):String {
 		return "Error: " + e;
 	}
 	#else
-	return "exec not supported on this target";
+	return "exec not supported";
 	#end
 });
 
@@ -1455,15 +1459,6 @@ class CustomInterp extends crowplexus.hscript.Interp
 	}
 
 	override function resolve(id: String): Dynamic {
-		#if sys
-		switch(id) {
-			case "sys": return sys;
-			case "sys.io": return sys.io;
-			case "sys.FileSystem": return sys.FileSystem;
-			case "Sys": return Sys;
-			case "File": return sys.io.File;
-		}
-		#end
 		
 		if (locals.exists(id)) {
 			var l = locals.get(id);

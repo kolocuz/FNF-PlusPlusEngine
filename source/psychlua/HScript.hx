@@ -738,59 +738,40 @@ class HScript extends Iris
 		set('StringTools', StringTools);
 
 set('eval', function(code:String):Dynamic {
-	#if (sys && neko)
+	#if (sys && !cpp)
 	try {
-		var tmp = Sys.getCwd() + '/eval_' + Date.now().getTime() + '.hx';
-		var nekoFile = Sys.getCwd() + '/eval_' + Date.now().getTime() + '.n';
-		sys.io.File.saveContent(tmp, "class Eval { public static function main() { " + code + "; } }");
-		var process = new sys.io.Process("haxe", ["-main", "Eval", "-lib", "hscript", "-neko", nekoFile])
-		process.exitCode();
-		process.close();
+		var dir = Sys.getCwd();
+		var timestamp = Std.string(Date.now().getTime());
+		var hxFile = dir + '/eval_' + timestamp + '.hx';
+		var nekoFile = dir + '/eval_' + timestamp + '.n';
+		sys.io.File.saveContent(hxFile, code);
+		var p = new sys.io.Process("haxe", ["-main", "Eval", "-lib", "hscript", "-neko", nekoFile, hxFile]);
+		p.exitCode();
+		p.close();
+		var result = null;
 		if (sys.FileSystem.exists(nekoFile)) {
-			var result = neko.Lib.load(nekoFile, "eval_" + Date.now().getTime(), 0);
+			result = neko.Lib.load(nekoFile, "eval_" + timestamp, 0);
 			sys.FileSystem.deleteFile(nekoFile);
-			sys.FileSystem.deleteFile(tmp);
-			return result;
 		}
-		sys.FileSystem.deleteFile(tmp);
-		return null;
+		sys.FileSystem.deleteFile(hxFile);
+		return result;
 	} catch(e:Dynamic) {
 		return "Error: " + e;
 	}
 	#else
-	return "eval not supported on this target";
+	return null;
 	#end
 });
 
 set('exec', function(cmd:String, ?args:Array<String>):String {
-	#if sys
+	#if (sys && !cpp)
 	try {
-		#if windows
-		var process = new sys.io.Process("cmd", ["/c", cmd].concat(args != null ? args : []));
-		#else
-		var process = new sys.io.Process(cmd, args != null ? args : []);
-		#end
-		var output = process.stdout.readAll().toString();
-		var error = process.stderr.readAll().toString();
-		process.close();
-		if (error.length > 0) return "Error: " + error;
-		return output;
+		var p = new sys.io.Process(cmd, args != null ? args : []);
+		var out = p.stdout.readAll().toString();
+		p.close();
+		return out;
 	} catch(e:Dynamic) {
 		return "Error: " + e;
-	}
-	#else
-	return "exec not supported";
-	#end
-});
-
-set('readFile', function(path:String):String {
-	#if sys
-	try {
-		if (sys.FileSystem.exists(path))
-			return sys.io.File.getContent(path);
-		return null;
-	} catch(e:Dynamic) {
-		return null;
 	}
 	#else
 	return null;
@@ -1460,6 +1441,15 @@ class CustomInterp extends crowplexus.hscript.Interp
 
 	override function resolve(id: String): Dynamic {
 		
+#if (sys && !cpp)
+switch(id) {
+	case "sys": return sys;
+	case "sys.io": return sys.io;
+	case "sys.FileSystem": return sys.FileSystem;
+	case "Sys": return Sys;
+	case "File": return sys.io.File;
+}
+#end
 		if (locals.exists(id)) {
 			var l = locals.get(id);
 			return l.r;

@@ -15,18 +15,24 @@ on:
         description: 'Build Windows x64'
         type: boolean
         default: true
-      dev_build:
-        description: 'Show GitHub commit build info in-game'
+      release_mode:
+        description: 'Create GitHub Release'
         type: boolean
-        default: true
+        default: false
+      release_tag:
+        description: 'Release tag (if release_mode is true)'
+        type: string
+        default: 'v1.0.0'
+      release_name:
+        description: 'Release name (if release_mode is true)'
+        type: string
+        default: 'Release v1.0.0'
 
 permissions:
-  contents: read
+  contents: write
 
 env:
-  APP_VERSION: 4.0.0-${{ github.run_id }}
   HAXE_VERSION: 4.3.7
-  DEV_BUILD_TAG: dev-build
 
 jobs:
   check_platforms:
@@ -36,16 +42,20 @@ jobs:
       build_linux: ${{ steps.set_outputs.outputs.build_linux }}
       build_android: ${{ steps.set_outputs.outputs.build_android }}
       build_windows: ${{ steps.set_outputs.outputs.build_windows }}
-      dev_build: ${{ steps.set_outputs.outputs.dev_build }}
+      release_mode: ${{ steps.set_outputs.outputs.release_mode }}
+      release_tag: ${{ steps.set_outputs.outputs.release_tag }}
+      release_name: ${{ steps.set_outputs.outputs.release_name }}
     steps:
       - id: set_outputs
         run: |
           echo "build_linux=${{ github.event.inputs.build_linux }}" >> $GITHUB_OUTPUT
           echo "build_android=${{ github.event.inputs.build_android }}" >> $GITHUB_OUTPUT
           echo "build_windows=${{ github.event.inputs.build_windows }}" >> $GITHUB_OUTPUT
-          echo "dev_build=${{ github.event.inputs.dev_build }}" >> $GITHUB_OUTPUT
+          echo "release_mode=${{ github.event.inputs.release_mode }}" >> $GITHUB_OUTPUT
+          echo "release_tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
+          echo "release_name=${{ github.event.inputs.release_name }}" >> $GITHUB_OUTPUT
 
-  build_linux_x64:
+  build_linux:
     name: Build Linux x64
     runs-on: ubuntu-24.04
     needs: check_platforms
@@ -66,22 +76,8 @@ jobs:
           chmod +x ./setup/unish-lib.sh
           ./setup/unish-lib.sh
 
-      - name: Prepare build
-        run: |
-          printf '%s\n' "${{ github.run_id }}" > VERSION
-          cat > source/backend/BuildInfoGenerated.hx <<'EOF'
-          package backend;
-
-          class BuildInfoGenerated
-          {
-            public static inline final githubDevBuild:Bool = ${{ needs.check_platforms.outputs.dev_build == 'true' }};
-            public static inline final commit:String = "${{ github.sha }}";
-            public static inline final runId:String = "${{ github.run_id }}";
-          }
-          EOF
-
       - name: Build
-        run: haxelib run lime build Project.xml linux --app-version="${APP_VERSION}" -DofficialBuild
+        run: haxelib run lime build Project.xml linux -DofficialBuild
 
       - name: Package artifact
         run: |
@@ -91,7 +87,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: linux-x64-artifact
+          name: linux-x64
           path: dist/FNF-PlusEngine-linux-x64.tar.gz
           if-no-files-found: error
 
@@ -145,23 +141,8 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT "$ANDROID_SDK_ROOT/ndk/27.3.13750724"
           haxelib run lime config JAVA_HOME "$JAVA_HOME"
 
-      - name: Prepare build
-        run: |
-          printf '%s\n' "${{ github.run_id }}" > VERSION
-          cat > source/backend/BuildInfoGenerated.hx <<'EOF'
-          package backend;
-
-          class BuildInfoGenerated
-          {
-            public static inline final githubDevBuild:Bool = ${{ needs.check_platforms.outputs.dev_build == 'true' }};
-            public static inline final commit:String = "${{ github.sha }}";
-            public static inline final runId:String = "${{ github.run_id }}";
-          }
-          EOF
-          rm -rf export build ~/.gradle
-
       - name: Build
-        run: haxelib run lime build Project.xml android --app-version="${APP_VERSION}" -DofficialBuild -DHXCPP_IGNORE_WARNINGS
+        run: haxelib run lime build Project.xml android -DofficialBuild -DHXCPP_IGNORE_WARNINGS
 
       - name: Package artifact
         run: |
@@ -173,11 +154,11 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: android-artifact
+          name: android
           path: dist/FNF-PlusEngine-android.apk
           if-no-files-found: error
 
-  build_windows_x64:
+  build_windows:
     name: Build Windows x64
     runs-on: windows-2025
     needs: check_platforms
@@ -195,22 +176,8 @@ jobs:
           haxelib setup C:\haxelib
           cmd /c setup\windows-lib.bat
 
-      - name: Prepare build
-        run: |
-          Set-Content -Path VERSION -Value "${{ github.run_id }}"
-          @'
-          package backend;
-
-          class BuildInfoGenerated
-          {
-            public static inline final githubDevBuild:Bool = ${{ needs.check_platforms.outputs.dev_build == 'true' }};
-            public static inline final commit:String = "${{ github.sha }}";
-            public static inline final runId:String = "${{ github.run_id }}";
-          }
-          '@ | Set-Content -Path source/backend/BuildInfoGenerated.hx
-
       - name: Build
-        run: haxelib run lime build Project.xml windows --app-version="${env:APP_VERSION}" -DofficialBuild
+        run: haxelib run lime build Project.xml windows -DofficialBuild
 
       - name: Package artifact
         run: |
@@ -220,57 +187,88 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: windows-x64-artifact
+          name: windows-x64
           path: dist/FNF-PlusEngine-windows-x64.zip
           if-no-files-found: error
 
+  publish_release:
+    name: Publish Release
+    runs-on: ubuntu-24.04
+    needs: 
+      - check_platforms
+      - build_linux
+      - build_android
+      - build_windows
+    if: needs.check_platforms.outputs.release_mode == 'true'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: linux-x64
+          path: release-assets
+
+      - name: Download Android artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: android
+          path: release-assets
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-x64
+          path: release-assets
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.check_platforms.outputs.release_tag }}
+          name: ${{ needs.check_platforms.outputs.release_name }}
+          draft: false
+          prerelease: false
+          files: |
+            release-assets/*.tar.gz
+            release-assets/*.apk
+            release-assets/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   summary:
-    name: Workflow Summary
+    name: Build Summary
     runs-on: ubuntu-24.04
     needs:
       - check_platforms
-      - build_linux_x64
+      - build_linux
       - build_android
-      - build_windows_x64
+      - build_windows
+      - publish_release
     if: always()
 
     steps:
-      - name: Build tree summary
+      - name: Print summary
         run: |
-          python - <<'PY'
-          import json
-          import os
-          import sys
-
-          needs = json.loads(r'''${{ toJson(needs) }}''')
-          order = [
-              ("build_linux_x64", "Linux x64"),
-              ("build_android", "Android"),
-              ("build_windows_x64", "Windows x64"),
-          ]
-          icons = {
-              "success": "[ok]",
-              "failure": "[fail]",
-              "cancelled": "[stop]",
-              "skipped": "[skip]",
-          }
-
-          lines = ["## Resumen", "", "```text", "workflow"]
-          failed = []
-
-          for index, (job_id, label) in enumerate(order):
-              result = needs[job_id]["result"]
-              icon = icons.get(result, "[?]")
-              branch = "`--" if index == len(order) - 1 else "|--"
-              lines.append(f"{branch} {label}: {icon} {result}")
-              if result not in ("success", "skipped"):
-                  failed.append(label)
-
-          lines.append("```")
-
-          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
-              handle.write("\n".join(lines) + "\n")
-
-          if failed:
-              sys.exit(1)
-          PY
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status | Artifact |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.check_platforms.outputs.build_linux }}" == "true" ]]; then
+            echo "| Linux | ${{ needs.build_linux.result }} | [Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/linux-x64) |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.check_platforms.outputs.build_android }}" == "true" ]]; then
+            echo "| Android | ${{ needs.build_android.result }} | [Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/android) |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.check_platforms.outputs.build_windows }}" == "true" ]]; then
+            echo "| Windows | ${{ needs.build_windows.result }} | [Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/windows-x64) |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.check_platforms.outputs.release_mode }}" == "true" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Release created: [${{ needs.check_platforms.outputs.release_name }}](https://github.com/${{ github.repository }}/releases/tag/${{ needs.check_platforms.outputs.release_tag }})" >> $GITHUB_STEP_SUMMARY
+          fi

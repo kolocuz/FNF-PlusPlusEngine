@@ -7,15 +7,10 @@ class CallbackHandler
 	{
 		try
 		{
-			//trace('calling $fname');
 			var cbf:Dynamic = Lua_helper.callbacks.get(fname);
 
-			//Local functions have the lowest priority
-			//This is to prevent a "for" loop being called in every single operation,
-			//so that it only loops on reserved/special functions
 			if(cbf == null) 
 			{
-				//trace('checking last script');
 				var last:FunkinLua = FunkinLua.lastCalledScript;
 				if(last == null || last.lua != l)
 				{
@@ -40,7 +35,6 @@ class CallbackHandler
 			}
 
 			var ret:Dynamic = null;
-			/* return the number of results */
 
 			ret = Reflect.callMethod(null,cbf,args);
 

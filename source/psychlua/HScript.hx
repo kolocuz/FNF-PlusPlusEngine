@@ -737,54 +737,85 @@ class HScript extends Iris
 		
 		set('StringTools', StringTools);
 
-		set('eval', function(code:String):Dynamic {
-			#if sys
-			try {
-				var tmp = sys.io.File.getTemporaryDirectory() + "/eval_" + Date.now().getTime() + ".hx";
-				sys.io.File.saveContent(tmp, "class Eval { public static function main() { " + code + " } }");
-				var process = new sys.io.Process("haxe -main Eval -lib hscript -neko " + sys.io.File.getTemporaryDirectory() + "/eval.n");
-				process.close();
-				return neko.Lib.load("eval.n", 0);
-			} catch(e:Dynamic) {
-				return "Error: " + e;
-			}
-			#else
-			return "eval not supported";
-			#end
-		});
+set('eval', function(code:String):Dynamic {
+	#if (sys && neko)
+	try {
+		var tmp = Sys.getCwd() + '/eval_' + Date.now().getTime() + '.hx';
+		var nekoFile = Sys.getCwd() + '/eval_' + Date.now().getTime() + '.n';
+		sys.io.File.saveContent(tmp, "class Eval { public static function main() { " + code + "; } }");
+		var process = new sys.io.Process("haxe", ["-main", "Eval", "-lib", "hscript", "-neko", nekoFile]);
+		process.exitCode();
+		process.close();
+		if (sys.FileSystem.exists(nekoFile)) {
+			var result = neko.Lib.load(nekoFile, "eval_" + Date.now().getTime(), 0);
+			sys.FileSystem.deleteFile(nekoFile);
+			sys.FileSystem.deleteFile(tmp);
+			return result;
+		}
+		sys.FileSystem.deleteFile(tmp);
+		return null;
+	} catch(e:Dynamic) {
+		return "Error: " + e;
+	}
+	#else
+	return "eval not supported on this target";
+	#end
+});
 
-		set('exec', function(cmd:String):String {
-			#if sys
-			var process = new sys.io.Process(cmd);
-			var output = process.stdout.readAll().toString();
-			process.close();
-			return output;
-			#else
-			return "";
-			#end
-		});
+set('exec', function(cmd:String, ?args:Array<String>):String {
+	#if sys
+	try {
+		var process = new sys.io.Process(cmd, args != null ? args : []);
+		var output = process.stdout.readAll().toString();
+		var error = process.stderr.readAll().toString();
+		process.close();
+		if (error.length > 0) return "Error: " + error;
+		return output;
+	} catch(e:Dynamic) {
+		return "Error: " + e;
+	}
+	#else
+	return "exec not supported on this target";
+	#end
+});
 
-		set('readFile', function(path:String):String {
-			#if sys
+set('readFile', function(path:String):String {
+	#if sys
+	try {
+		if (sys.FileSystem.exists(path))
 			return sys.io.File.getContent(path);
-			#else
-			return null;
-			#end
-		});
+		return null;
+	} catch(e:Dynamic) {
+		return null;
+	}
+	#else
+	return null;
+	#end
+});
 
-		set('writeFile', function(path:String, content:String):Void {
-			#if sys
-			sys.io.File.saveContent(path, content);
-			#end
-		});
+set('writeFile', function(path:String, content:String):Void {
+	#if sys
+	try {
+		sys.io.File.saveContent(path, content);
+	} catch(e:Dynamic) {
+		trace('Error writing file: $e');
+	}
+	#end
+});
 
-		set('listDir', function(path:String):Array<String> {
-			#if sys
+set('listDir', function(path:String):Array<String> {
+	#if sys
+	try {
+		if (sys.FileSystem.exists(path) && sys.FileSystem.isDirectory(path))
 			return sys.FileSystem.readDirectory(path);
-			#else
-			return [];
-			#end
-		});
+		return [];
+	} catch(e:Dynamic) {
+		return [];
+	}
+	#else
+	return [];
+	#end
+});
 
 		set('createInstance', function(className:String, args:Array<Dynamic>):Dynamic {
 			var cls = Type.resolveClass(className);

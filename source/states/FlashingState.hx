@@ -16,7 +16,7 @@ class FlashingState extends MusicBeatState
 	{
 		super.create();
 
-		final isMobile:Bool = controls.mobileC && ClientPrefs.data.mobileControlsMode != null;
+		final isMobile:Bool = controls.mobileC;
 
 		bg = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		add(bg);

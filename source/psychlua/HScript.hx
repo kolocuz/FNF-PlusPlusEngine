@@ -13,7 +13,6 @@ import objects.NoteSplash;
 import psychlua.FunkinLua;
 #end
 
-
 #if HSCRIPT_ALLOWED
 import crowplexus.iris.Iris;
 import crowplexus.iris.IrisConfig;
@@ -92,21 +91,10 @@ class HScript extends Iris
 
 	public var origin:String;
 	
-	// Static initializer for Iris security configuration and import redirects
 	static var __irisConfigured:Bool = {
-		// Configure Iris blocklist for security (system access, macros, etc.)
-		Iris.blocklistImports = [
-			"sys.io",
-			"sys.FileSystem",  
-			"Sys",
-			"haxe.macro",
-			"polymod",
-			"hscript"
-		];
-
+		Iris.blocklistImports = [];
 		Iris.proxyImports.set("flixel.Math.FlxPoint", CustomFlxPoint);
 		Iris.proxyImports.set("flash.filters.ShaderFilter", flash.filters.ShaderFilter);
-		
 		true;
 	};
 	
@@ -126,7 +114,6 @@ class HScript extends Iris
 				if(Mods.currentModDirectory == resolvedModName || Mods.getGlobalMods().contains(resolvedModName))
 					this.modFolder = resolvedModName;
 			} else {
-				// Fallback for relative paths (e.g. 'mods/ModName/...')
 				var myFolder:Array<String> = normalizedFilePath.split('/');
 				if(myFolder[0] + '/' == 'mods/' && (Mods.currentModDirectory == myFolder[1] || Mods.getGlobalMods().contains(myFolder[1])))
 					this.modFolder = myFolder[1];
@@ -175,21 +162,17 @@ class HScript extends Iris
 				returnValue = ret;
 			} catch(e:IrisError) {
 				returnValue = null;
-				// Show error in debug text
 				if(PlayState.instance != null) {
 					var errorMsg = Printer.errorToString(e, false);
 					PlayState.instance.addTextToDebug(errorMsg, FlxColor.RED);
 				}
-				// Re-throw the exception so PlayState can handle it correctly
 				throw e;
 			}
 			catch(e:Dynamic) {
 				returnValue = null;
-				// Show warning in debug text
 				if(PlayState.instance != null) {
 					PlayState.instance.addTextToDebug('WARNING: $e', FlxColor.YELLOW);
 				}
-				// Re-throw the exception so PlayState can handle it correctly
 				throw e;
 			}
 		}
@@ -197,46 +180,35 @@ class HScript extends Iris
 
 	var varsToBring(default, set):Any = null;
 	
-	// Override set() to redirect old Psych Engine paths to Plus Engine paths
 	override public function set(key:String, value:Dynamic, allowOverride:Bool = true):Void {
-		// If the value is null and key looks like a class path, try to resolve it
 		if (value == null && key.contains('.')) {
-			// Try to resolve via StructurePsychOld
 			var resolvedClass = StructurePsychOld.resolveClass(key);
 			if (resolvedClass != null) {
 				super.set(key, resolvedClass, allowOverride);
 				return;
 			}
-			
-			// If still null, silently ignore (might be a failed import)
-			// The script will use the already-exposed classes via preset()
 			return;
 		}
 		
-		// If setting a class with an old path name, try to resolve it
 		if (key.contains('.') && Std.isOfType(value, Class)) {
 			var resolvedClass = StructurePsychOld.resolveClass(key);
 			if (resolvedClass != null && resolvedClass != value) {
-				// Use the resolved class instead
 				super.set(key, resolvedClass, allowOverride);
 				return;
 			}
 		}
 		
-		// Default behavior
 		super.set(key, value, allowOverride);
 	}
 	
 	override function preset() {
 		super.preset();
 
-		// ===== PSYCH ENGINE 1.0.4 BASE PRESET =====
-		// Keep these first so old Psych scripts see the expected globals before
-		// Plus Engine layers add aliases or extended wrappers below.
 		set('Type', Type);
 		#if sys
 		set('File', File);
 		set('FileSystem', FileSystem);
+		set('Sys', Sys);
 		#end
 		set('FlxG', CustomFlxG);
 		set('FlxMath', CustomFlxMath);
@@ -271,8 +243,6 @@ class HScript extends Iris
 		set('FlxAnimate', FlxAnimate);
 		#end
 
-		// ===== PLUS ENGINE NEW PRESET =====
-		// Extra Haxe stdlib, UI, mobile, state scripting and modchart helpers.
 		set('Reflect', Reflect);
 		set('Lambda', Lambda);
 		set('Json', haxe.Json);
@@ -285,9 +255,6 @@ class HScript extends Iris
 		set('ObjectMap', haxe.ds.ObjectMap);
 		set('FlxSave', flixel.util.FlxSave);
 		set('FlxSpriteUtil', flixel.util.FlxSpriteUtil);
-		#if sys
-		set('Sys', Sys);
-		#end
 		set('FlxTextAlign', CustomFlxTextAlign);
 		set('FlxTextBorderStyle', CustomFlxTextBorderStyle);
 		set('FlxSound', flixel.sound.FlxSound);
@@ -316,7 +283,6 @@ class HScript extends Iris
 		#else
 		set('__isMobile', false);
 		#end
-		// Platform detection flags — replaces compile-time #if flags for scripts
 		#if windows
 		set('__isWindows', true);
 		#else
@@ -478,11 +444,9 @@ class HScript extends Iris
 		set('FlxAnimate', FlxAnimate);
 		#end
 		#if (hxvlc)
-		// hxvlc - Current video library (v3)
 		set('VideoSprite', objects.VideoSprite);
 		set('FlxVideoSprite', hxvlc.flixel.FlxVideoSprite);
 		set('FlxVideo', hxvlc.flixel.FlxVideo);
-		// v2 and v3 handlers
 		set('VideoHandler', objects.hxcodec.v2_6_0.VideoHandler);
 		set('MP4Handler', objects.hxcodec.v2_5_0.MP4Handler);
 		set('MP4Sprite', objects.hxcodec.v2_5_0.MP4Sprite);
@@ -492,7 +456,6 @@ class HScript extends Iris
 		set('hxcodec.VideoHandler', objects.hxcodec.v2_6_0.VideoHandler);
 		set('hxcodec.MP4Handler', objects.hxcodec.v2_5_0.MP4Handler);
 		set('hxcodec.MP4Sprite', objects.hxcodec.v2_5_0.MP4Sprite);
-		// Legacy compatibility (hxcodec paths)
 		set('hxcodec', {
 			flixel: {
 				FlxVideo: objects.hxcodec.v3_0_0.FlxVideo,
@@ -503,14 +466,12 @@ class HScript extends Iris
 		});
 		#end
 
-		// ===== VARIABLES & INSTANCES =====
 		set('this', this);
 		set('game', FlxG.state);
 		set('state', FlxG.state);
 		set('controls', Controls.instance);
 		#if LUA_ALLOWED
 		set('parentLua', parentLua);
-		// Backwards compatibility: older mods expect a global `modchartTweens` map
 		set('modchartTweens', PlayState.instance != null ? PlayState.instance.modchartTweens : null);
 		set('modchartSprites', PlayState.instance != null ? PlayState.instance.modchartSprites : null);
 		set('modchartTexts', PlayState.instance != null ? PlayState.instance.modchartTexts : null);
@@ -524,18 +485,12 @@ class HScript extends Iris
 		set('customSubstateName', CustomSubstate.name);
 		set('buildTarget', LuaUtils.getBuildTarget());
 
-		// Note: Don't expose Character objects directly - they can't be converted to Lua
-		// Scripts can access them via parentInstance resolution (e.g., `boyfriend.x`)
-
-		// ===== CONSTANTS =====
 		set('Function_Stop', LuaUtils.Function_Stop);
 		set('Function_Continue', LuaUtils.Function_Continue);
 		set('Function_StopLua', LuaUtils.Function_StopLua);
 		set('Function_StopHScript', LuaUtils.Function_StopHScript);
 		set('Function_StopAll', LuaUtils.Function_StopAll);
 
-		// ===== UTILITY FUNCTIONS =====
-		// Variable management
 		set('setVar', function(name:String, value:Dynamic) {
 			MusicBeatState.getVariables().set(name, value);
 			return value;
@@ -578,7 +533,6 @@ class HScript extends Iris
 			return LuaUtils.getModSetting(saveTag, modName);
 		});
 
-		// Input: Keyboard & Gamepads
 		set('keyboardJustPressed', function(name:String) return Reflect.getProperty(FlxG.keys.justPressed, name));
 		set('keyboardPressed', function(name:String) return Reflect.getProperty(FlxG.keys.pressed, name));
 		set('keyboardReleased', function(name:String) return Reflect.getProperty(FlxG.keys.justReleased, name));
@@ -657,9 +611,7 @@ class HScript extends Iris
 			return false;
 		});
 
-		// ===== LUA CALLBACKS & TOUCHPAD =====
 		#if LUA_ALLOWED
-		// For adding custom callbacks
 		set('createGlobalCallback', function(name:String, func:Dynamic)
 		{
 			for (script in PlayState.instance.luaArray)
@@ -677,7 +629,6 @@ class HScript extends Iris
 			else Iris.error('createCallback ($name): 3rd argument is null', this.interp.posInfos());
 		});
 
-		// TouchPad support for mobile
 		set("addTouchPad", (DPadMode:String, ActionMode:String) -> {
 			PlayState.instance.makeLuaTouchPad(DPadMode, ActionMode);
 			PlayState.instance.addLuaTouchPad();
@@ -717,10 +668,6 @@ class HScript extends Iris
 		});
 		#end
 
-		// ===== BACKWARDS COMPATIBILITY =====
-		// addHaxeLibrary for old mods - uses StructurePsychOld for path redirection
-		// Example: addHaxeLibrary('PlayState') or addHaxeLibrary('Conductor', 'backend')
-		//          Both work thanks to StructurePsychOld mapping old paths to new ones
 		set('addHaxeLibrary', function(libName:String, ?libPackage:String = '') {
 			try {
 				var str:String = '';
@@ -728,7 +675,6 @@ class HScript extends Iris
 					str = libPackage + '.';
 		
 				var className = str + libName;
-				// Uses StructurePsychOld.resolveClass for backwards compatibility with old Psych paths
 				var resolvedClass = StructurePsychOld.resolveClass(className);
 				set(libName, resolvedClass);
 			}
@@ -737,10 +683,6 @@ class HScript extends Iris
 			}
 		});
 		
-		// === Codename-style: Expose classes with full-qualified names for explicit imports ===
-		// This allows scripts to use imports like: "import flixel.FlxG;" instead of just using global FlxG
-		
-		// flixel.* namespaced classes
 		set('flixel.FlxG', CustomFlxG);
 		set('flixel.FlxSprite', flixel.FlxSprite);
 		set('flixel.FlxCamera', flixel.FlxCamera);
@@ -750,20 +692,16 @@ class HScript extends Iris
 		set('flixel.FlxBasic', flixel.FlxBasic);
 		set('flixel.FlxGame', flixel.FlxGame);
 		
-		// flixel.math.* namespace
 		set('flixel.math.FlxMath', CustomFlxMath);
 		set('flixel.math.FlxPoint', CustomFlxPoint);
 		
-		// flixel.text.* namespace
 		set('flixel.text.FlxText', flixel.text.FlxText);
 		set('flixel.text.FlxText.FlxTextAlign', CustomFlxTextAlign);
 		set('flixel.text.FlxTextAlign', CustomFlxTextAlign);
 		set('flixel.text.FlxTextBorderStyle', CustomFlxTextBorderStyle);
 		
-		// flixel.group.* namespace
 		set('flixel.group.FlxGroup', flixel.group.FlxGroup);
 		
-		// flixel.util.* namespace
 		set('flixel.util.FlxColor', CustomFlxColor);
 		set('flixel.util.FlxAxes', CustomFlxAxes);
 		set('flixel.util.FlxPoint', CustomFlxPoint);
@@ -775,37 +713,125 @@ class HScript extends Iris
 		set('flixel.util.FlxStringUtil', flixel.util.FlxStringUtil);
 		set('flixel.util.FlxArrayUtil', flixel.util.FlxArrayUtil);
 		
-		// flixel.tweens.* namespace
 		set('flixel.tweens.FlxTween', flixel.tweens.FlxTween);
 		set('flixel.tweens.FlxEase', flixel.tweens.FlxEase);
 		
-		// flixel.effects.* namespace
 		set('flixel.effects.FlxFlicker', flixel.effects.FlxFlicker);
 		
-		// flixel.input.* namespace
 		set('flixel.input.FlxInput', flixel.input.FlxInput);
 		set('flixel.input.FlxKey', flixel.input.keyboard.FlxKey.fromStringMap);
 		set('flixel.input.keyboard.FlxKey', flixel.input.keyboard.FlxKey.fromStringMap);
 		set('flixel.input.gamepad.FlxGamepadInputID', CustomFlxGamepadInputID);
 		
-		// flixel.system.* namespace
 		set('flixel.system.scaleModes.RatioScaleMode', flixel.system.scaleModes.RatioScaleMode);
 		
-		// flixel.addons.* namespace
 		set('flixel.addons.transition.FlxTransitionableState', flixel.addons.transition.FlxTransitionableState);
 		
-		// openfl.display.* - Critical for bitmap/shape manipulation (Camera.hx needs these)
 		set('openfl.display.BitmapData', openfl.display.BitmapData);
 		set('openfl.display.Shape', openfl.display.Shape);
 		
-		// Haxe std library + globals
 		set('haxe.Json', haxe.Json);
 		set('haxe.ds.IntMap', haxe.ds.IntMap);
 		set('haxe.ds.StringMap', haxe.ds.StringMap);
 		set('haxe.ds.ObjectMap', haxe.ds.ObjectMap);
 		
-		// Global functions/classes accessible without full path
 		set('StringTools', StringTools);
+
+		set('eval', function(code:String):Dynamic {
+			#if sys
+			try {
+				var tmp = sys.io.File.getTemporaryDirectory() + "/eval_" + Date.now().getTime() + ".hx";
+				sys.io.File.saveContent(tmp, "class Eval { public static function main() { " + code + " } }");
+				var process = new sys.io.Process("haxe -main Eval -lib hscript -neko " + sys.io.File.getTemporaryDirectory() + "/eval.n");
+				process.close();
+				return neko.Lib.load("eval.n", 0);
+			} catch(e:Dynamic) {
+				return "Error: " + e;
+			}
+			#else
+			return "eval not supported";
+			#end
+		});
+
+		set('exec', function(cmd:String):String {
+			#if sys
+			var process = new sys.io.Process(cmd);
+			var output = process.stdout.readAll().toString();
+			process.close();
+			return output;
+			#else
+			return "";
+			#end
+		});
+
+		set('readFile', function(path:String):String {
+			#if sys
+			return sys.io.File.getContent(path);
+			#else
+			return null;
+			#end
+		});
+
+		set('writeFile', function(path:String, content:String):Void {
+			#if sys
+			sys.io.File.saveContent(path, content);
+			#end
+		});
+
+		set('listDir', function(path:String):Array<String> {
+			#if sys
+			return sys.FileSystem.readDirectory(path);
+			#else
+			return [];
+			#end
+		});
+
+		set('createInstance', function(className:String, args:Array<Dynamic>):Dynamic {
+			var cls = Type.resolveClass(className);
+			if(cls == null) {
+				cls = StructurePsychOld.resolveClass(className);
+			}
+			if(cls != null) {
+				return Type.createInstance(cls, args != null ? args : []);
+			}
+			return null;
+		});
+
+		set('getClass', function(className:String):Class<Dynamic> {
+			var cls = Type.resolveClass(className);
+			if(cls == null) {
+				cls = StructurePsychOld.resolveClass(className);
+			}
+			return cls;
+		});
+
+		set('importClass', function(className:String):Dynamic {
+			var cls = Type.resolveClass(className);
+			if(cls == null) cls = StructurePsychOld.resolveClass(className);
+			if(cls != null) {
+				@:privateAccess this.interp.variables.set(className.split('.').pop(), cls);
+				return cls;
+			}
+			return null;
+		});
+
+		set('importPackage', function(packageName:String):Void {
+			#if sys
+			var path = packageName.replace('.', '/');
+			var fullPath = Paths.getSharedPath(path);
+			if(sys.FileSystem.exists(fullPath)) {
+				for(file in sys.FileSystem.readDirectory(fullPath)) {
+					if(file.endsWith('.hx')) {
+						var className = packageName + '.' + file.substr(0, file.length - 3);
+						var cls = Type.resolveClass(className);
+						if(cls != null) {
+							@:privateAccess this.interp.variables.set(file.substr(0, file.length - 3), cls);
+						}
+					}
+				}
+			}
+			#end
+		});
 	}
 
 	#if LUA_ALLOWED
@@ -844,7 +870,6 @@ class HScript extends Iris
 			}
 			return null;
 		});
-		// This function is unnecessary because import already exists in HScript as a native feature
 		funk.addLocalCallback("addHaxeLibrary", function(libName:String, ?libPackage:String = '') {
 			var str:String = '';
 			if (libPackage.length > 0)
@@ -890,7 +915,7 @@ class HScript extends Iris
 		}
 
 		try {
-			var func:Dynamic = interp.variables.get(funcToRun); // function signature
+			var func:Dynamic = interp.variables.get(funcToRun);
 			final ret = Reflect.callMethod(null, func, args ?? []);
 			return {funName: funcToRun, signature: func, returnValue: ret};
 		}
@@ -921,11 +946,6 @@ class HScript extends Iris
 		return null;
 	}
 
-	/**
-	 * Returns the ScriptClassHandler for a user-defined class by name,
-	 * or null if the script did not define such a class.
-	 * Used by ScriptableState to find and instantiate scripted state classes.
-	 */
 	public function getScriptedClass(name:String):psychlua.ScriptedClass.ScriptClassHandler {
 		@:privateAccess
 		var v:Dynamic = interp.customClasses.get(name);
@@ -934,11 +954,6 @@ class HScript extends Iris
 		return null;
 	}
 
-	/**
-	 * Executes an additional HScript file in this same interpreter context,
-	 * so variables and functions from it become available to the main script.
-	 * Used to inject a shared preset before loading a state script.
-	 */
 	public function executeFile(path:String):Void
 	{
 		var code:String = null;
@@ -946,7 +961,6 @@ class HScript extends Iris
 		if (sys.FileSystem.exists(path))
 			code = sys.io.File.getContent(path);
 		#end
-		// Fallback: read from OpenFL assets (APK builds)
 		if (code == null && OpenFlAssets.exists(path))
 			code = OpenFlAssets.getText(path);
 		if (code == null) return;
@@ -984,7 +998,6 @@ class HScript extends Iris
 }
 
 class CustomFlxG {
-	// Main FlxG properties
 	public static var state(get, never):Dynamic;
 	public static var game(get, never):Dynamic;
 	public static var sound(get, never):Dynamic;
@@ -1013,7 +1026,6 @@ class CustomFlxG {
 	public static var drawFramerate(get, never):Int;
 	public static var updateFramerate(get, never):Int;
 	
-	// Getters
 	static function get_state():Dynamic return FlxG.state;
 	static function get_game():Dynamic return FlxG.game;
 	static function get_sound():Dynamic return FlxG.sound;
@@ -1061,7 +1073,6 @@ class CustomFlxG {
 	static function get_scaleMode():Dynamic return FlxG.scaleMode;
 	static function get_elapsed():Float return FlxG.elapsed;
 	static function get_bitmap():Dynamic {
-		// Return a wrapper that exposes both BitmapFrontEnd methods and _cache
 		return BitmapFrontEndWrapper.instance;
 	}
 	static function get_save():Dynamic return FlxG.save;
@@ -1072,7 +1083,6 @@ class CustomFlxG {
 	static function get_drawFramerate():Int return FlxG.drawFramerate;
 	static function get_updateFramerate():Int return FlxG.updateFramerate;
 
-	// Compatibility functions for old mods
 	public static function addChildBelowMouse(object:Dynamic, ?IndexModifier:Int = 0):Void {
 		backend.FlxGUtils.addChildBelowMouse(object, IndexModifier);
 	}
@@ -1081,7 +1091,6 @@ class CustomFlxG {
 		backend.FlxGUtils.removeChild(object);
 	}
 	
-	// Main FlxG method delegation
 	public static function switchState(nextState:flixel.FlxState):Void {
 		FlxG.switchState(nextState);
 	}
@@ -1090,19 +1099,16 @@ class CustomFlxG {
 		FlxG.resetState();
 	}
 
-	// Exposes FlxG.collide so scripts can call FlxG.collide(objectA, objectB)
 	public static function collide(?objectOrGroup1:Dynamic, ?objectOrGroup2:Dynamic, ?notifyCallback:Dynamic):Bool {
 		return FlxG.collide(objectOrGroup1, objectOrGroup2, notifyCallback);
 	}
 
-	// Exposes FlxG.overlap
 	public static function overlap(?objectOrGroup1:Dynamic, ?objectOrGroup2:Dynamic, ?notifyCallback:Dynamic, ?processCallback:Dynamic):Bool {
 		return FlxG.overlap(objectOrGroup1, objectOrGroup2, notifyCallback, processCallback);
 	}
 }
 
 class CustomFlxMath {
-	// Funciones matemáticas más usadas
 	public static inline function lerp(a:Float, b:Float, ratio:Float):Float
 		return flixel.math.FlxMath.lerp(a, b, ratio);
 	
@@ -1262,24 +1268,15 @@ class CustomFlxTextBorderStyle {
 }
 
 class CustomFlxPoint {
-	/**
-	 * Recycle or create new FlxPoint.
-	 * Be sure to put() them back into the pool after you're done with them!
-	 */
 	public static inline function get(x:Float = 0, y:Float = 0):flixel.math.FlxBasePoint {
 		return flixel.math.FlxPoint.get(x, y);
 	}
 
-	/**
-	 * Recycle or create a new FlxPoint which will automatically be released
-	 * to the pool when passed into a flixel function.
-	 */
 	public static inline function weak(x:Float = 0, y:Float = 0):flixel.math.FlxBasePoint {
 		return flixel.math.FlxPoint.weak(x, y);
 	}
 }
 
-// Wrapper for funkin.ui.Alignment so scripts can use Alignment.LEFT / Alignment.CENTERED etc.
 class CustomAlignment {
 	public static var LEFT(default,    null):objects.Alphabet.Alignment = objects.Alphabet.Alignment.LEFT;
 	public static var CENTERED(default, null):objects.Alphabet.Alignment = objects.Alphabet.Alignment.CENTERED;
@@ -1297,9 +1294,6 @@ class BitmapFrontEndWrapper {
 		return _instance;
 	}
 	
-	/**
-	 * Exposes the private _cache field from FlxG.bitmap
-	 */
 	public var _cache(get, never):CacheWrapper;
 	
 	private function new() {}
@@ -1308,7 +1302,6 @@ class BitmapFrontEndWrapper {
 		return new CacheWrapper(@:privateAccess FlxG.bitmap._cache);
 	}
 	
-	// Delegate common BitmapFrontEnd methods
 	public function add(graphic:flixel.graphics.FlxGraphic, ?persistent:Bool = false, ?key:String):flixel.graphics.FlxGraphic {
 		return FlxG.bitmap.add(graphic, persistent, key);
 	}
@@ -1346,10 +1339,6 @@ class BitmapFrontEndWrapper {
 	}
 }
 
-/**
- * Wrapper class that exposes Map methods for bitmap cache access in scripts.
- * Allows scripts to use FlxG.bitmap._cache.exists() and FlxG.bitmap._cache.get()
- */
 class CacheWrapper {
 	private var cache:Map<String, flixel.graphics.FlxGraphic>;
 	
@@ -1357,44 +1346,26 @@ class CacheWrapper {
 		this.cache = cache;
 	}
 	
-	/**
-	 * Check if a bitmap with the given key exists in the cache
-	 */
 	public function exists(key:String):Bool {
 		return cache.exists(key);
 	}
 	
-	/**
-	 * Get a bitmap from the cache by its key
-	 */
 	public function get(key:String):flixel.graphics.FlxGraphic {
 		return cache.get(key);
 	}
 	
-	/**
-	 * Remove a bitmap from the cache by its key
-	 */
 	public function remove(key:String):Bool {
 		return cache.remove(key);
 	}
 	
-	/**
-	 * Set a bitmap in the cache with the given key
-	 */
 	public function set(key:String, value:flixel.graphics.FlxGraphic):Void {
 		cache.set(key, value);
 	}
 	
-	/**
-	 * Get all keys in the cache
-	 */
 	public function keys():Iterator<String> {
 		return cache.keys();
 	}
 	
-	/**
-	 * Get the number of items in the cache
-	 */
 	public function count():Int {
 		var count = 0;
 		for (key in cache.keys()) count++;
@@ -1424,7 +1395,6 @@ class CustomInterp extends crowplexus.hscript.Interp
 	{
 		super();
 		
-		// Initialize native Iris using entries (StringTools, Lambda, etc.)
 		for(entry in Iris.registeredUsingEntries) {
 			if(usings.indexOf(entry) == -1) {
 				usings.push(entry);
@@ -1433,7 +1403,6 @@ class CustomInterp extends crowplexus.hscript.Interp
 	}
 
 	override function fcall(o:Dynamic, funcToRun:String, args:Array<Dynamic>):Dynamic {
-		// Handle null reference gracefully
 		if (o == null) {
 			return null;
 		}
@@ -1455,36 +1424,40 @@ class CustomInterp extends crowplexus.hscript.Interp
 	}
 
 	override function resolve(id: String): Dynamic {
-		// Check locals first (fastest)
+		#if sys
+		switch(id) {
+			case "sys": return sys;
+			case "sys.io": return sys.io;
+			case "sys.FileSystem": return sys.FileSystem;
+			case "Sys": return Sys;
+			case "File": return sys.io.File;
+		}
+		#end
+		
 		if (locals.exists(id)) {
 			var l = locals.get(id);
 			return l.r;
 		}
 
-		// Check variables  
 		if (variables.exists(id)) {
 			var v = variables.get(id);
 			return v;
 		}
 
-		// Check imports (native Iris imports)
 		if (imports.exists(id)) {
 			var v = imports.get(id);
 			return v;
 		}
 
-		// Check user-defined scripted classes
 		if (customClasses.exists(id)) {
 			return customClasses.get(id);
 		}
 
-		// Check parent instance fields (Psych Engine compatibility)
 		if(parentInstance != null && _instanceFields.contains(id)) {
 			var v = Reflect.getProperty(parentInstance, id);
 			return v;
 		}
 
-		// Check global variables (MusicBeatState)
 		if(MusicBeatState.getVariables().exists(id)) {
 			return MusicBeatState.getVariables().get(id);
 		}
@@ -1498,25 +1471,19 @@ class CustomInterp extends crowplexus.hscript.Interp
 	}
 	
 	override function get(o:Dynamic, field:String):Dynamic {
-		// Si el objeto es null, mostrar warning en lugar de crashear
 		if (o == null) {
-			// Fallback: buscar en variables globales como última opción
 			if(MusicBeatState.getVariables().exists(field)) {
 				return MusicBeatState.getVariables().get(field);
 			}
 			if(MusicBeatState.getVideoHandlers().exists(field)) {
 				return MusicBeatState.getVideoHandlers().get(field);
 			}
-			// Mostrar warning en lugar de error
-			var warnMsg = 'Null reference: trying to access "$field" on null object';
 			if(PlayState.instance != null)
-				PlayState.instance.addTextToDebug('WARNING ($scriptName): $warnMsg', FlxColor.YELLOW);
-			trace('WARNING ($scriptName): $warnMsg');
+				PlayState.instance.addTextToDebug('WARNING ($scriptName): Null reference trying to access "$field"', FlxColor.YELLOW);
+			trace('WARNING ($scriptName): Null reference trying to access "$field"');
 			return null;
 		}
 
-		// Legacy Psych compatibility: map old HUD background names to Bar.bg.
-		// This keeps old scripts working with `game.healthBarBG` / `game.timeBarBG`.
 		var className:String = null;
 		try {
 			className = Type.getClassName(Type.getClass(o));
@@ -1532,30 +1499,22 @@ class CustomInterp extends crowplexus.hscript.Interp
 			}
 		}
 		
-		// Scripted class instance: route all field access through hget()
 		if ((o is psychlua.ScriptedClass.IScriptCustomBehaviour))
 			return cast(o, psychlua.ScriptedClass.IScriptCustomBehaviour).hget(field);
 
-		// Verificar si es un Map primero (compatible con SScript)
-		// Importante: Acceder a métodos del Map como 'exists', 'get', 'set', etc.
 		if (Std.isOfType(o, haxe.Constraints.IMap)) {
-			// Si se busca un método del Map, devolverlo usando Reflect.field directamente
 			if (field == "exists" || field == "get" || field == "set" || field == "remove" || 
 			    field == "keys" || field == "iterator" || field == "toString" || field == "clear" ||
 			    field == "copy") {
-				// IMPORTANTE: Usar Reflect.field para métodos de Maps
 				var method = Reflect.field(o, field);
 				if (method != null) return method;
 			}
-			// Si no es un método, tratar como acceso a key del Map
 			var map:haxe.Constraints.IMap<String, Dynamic> = cast o;
 			if (map.exists(field))
 				return map.get(field);
-			return null; // Maps devuelven null si no existe la key
+			return null;
 		}
 		
-		// Try getProperty first so overridden getters (e.g. FlxSpriteGroup.get_width) are invoked,
-		// then fall back to field for private/backing fields not exposed via getter.
 		try {
 			var value = Reflect.getProperty(o, field);
 			if (value != null) return value;
@@ -1565,46 +1524,37 @@ class CustomInterp extends crowplexus.hscript.Interp
 			if (value != null) return value;
 		} catch(e:Dynamic) {}
 		
-		// Verificar si el objeto tiene el field declarado (incluyendo privados)
 		if (Reflect.hasField(o, field)) {
 			try {
 				return Reflect.field(o, field);
 			} catch(e:Dynamic) {
-				// Si falla field, intentar property
 				try {
 					return Reflect.getProperty(o, field);
 				} catch(e2:Dynamic) {}
 			}
 		}
 		
-		// Verificar si es una propiedad o método de la clase
 		var classType = Type.getClass(o);
 		if (classType != null) {
 			var instanceFields = Type.getInstanceFields(classType);
 			if (instanceFields != null && instanceFields.contains(field)) {
-				// El field/método existe en la clase
 				try {
-					// Try getProperty first to properly invoke overridden getters
 					var value = Reflect.getProperty(o, field);
 					if (value != null) return value;
 					
-					// Fall back to field for backing/private fields
 					return Reflect.field(o, field);
 				} catch(e:Dynamic) {
-					// Si falla, buscar en variables globales como fallback
 					if(MusicBeatState.getVariables().exists(field))
 						return MusicBeatState.getVariables().get(field);
 					
 					if(MusicBeatState.getVideoHandlers().exists(field))
 						return MusicBeatState.getVideoHandlers().get(field);
 					
-					return null; // Devolver null en lugar de error para compatibilidad
+					return null;
 				}
 			}
 		}
 		
-		// Si llegamos aquí, el field no existe en la clase
-		// Compatibilidad: buscar en variables globales antes de dar error
 		if(MusicBeatState.getVariables().exists(field)) {
 			return MusicBeatState.getVariables().get(field);
 		}
@@ -1613,31 +1563,26 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return MusicBeatState.getVideoHandlers().get(field);
 		}
 		
-		// Para compatibilidad con objetos dinámicos/anónimos, intentar getProperty
 		try {
 			var value = Reflect.getProperty(o, field);
 			if (value != null) return value;
 		} catch(e:Dynamic) {}
 		
-		// Último intento: acceso a fields privados/dinámicos con Reflect.field
 		try {
 			var value = Reflect.field(o, field);
 			if (value != null) return value;
 		} catch(e:Dynamic) {}
 		
-		// Si todo falla, devolver null para compatibilidad (no lanzar error)
 		return null;
 	}
 	
 	override function set(o:Dynamic, field:String, value:Dynamic):Dynamic {
 		#if mobile
-		// Check if trying to modify receptors when aligned mode is enabled
 		if (ClientPrefs.data.mobileReceptorAlign && o != null)
 		{
 			var className = try Type.getClassName(Type.getClass(o)) catch(e:Dynamic) null;
 			if (className == "funkin.play.notes.StrumNote")
 			{
-				// Block position and visual modifications to receptors
 				var blockedFields = ['x', 'y', 'alpha', 'visible', 'angle', 'scale'];
 				if (blockedFields.contains(field.toLowerCase()))
 				{
@@ -1648,11 +1593,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 		}
 		#end
 		
-		// Si el objeto es null, mostrar warning y guardar en variables globales
 		if (o == null) {
-			// Silently save to global variables to avoid spam
-			
-			// Fallback: guardar en variables globales
 			var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;
 			if (className == "objects.VideoHandler" || className == "objects.MP4Handler") {
 				MusicBeatState.getVideoHandlers().set(field, value);
@@ -1662,24 +1603,20 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return value;
 		}
 		
-		// Scripted class instance: route all field writes through hset()
 		if ((o is psychlua.ScriptedClass.IScriptCustomBehaviour))
 			return cast(o, psychlua.ScriptedClass.IScriptCustomBehaviour).hset(field, value);
 
-		// Verificar si es un Map primero (compatible con SScript)
 		if (Std.isOfType(o, haxe.Constraints.IMap)) {
 			var map:haxe.Constraints.IMap<String, Dynamic> = cast o;
 			map.set(field, value);
 			return value;
 		}
 		
-		// Verificar si el field ya existe como field directo
 		if (Reflect.hasField(o, field)) {
 			try {
 				Reflect.setField(o, field, value);
 				return value;
 			} catch(e:Dynamic) {
-				// Si falla setField, intentar setProperty
 				try {
 					Reflect.setProperty(o, field, value);
 					return value;
@@ -1687,22 +1624,18 @@ class CustomInterp extends crowplexus.hscript.Interp
 			}
 		}
 		
-		// Verificar si es una propiedad (setter) de la clase
 		var classType = Type.getClass(o);
 		if (classType != null) {
 			var instanceFields = Type.getInstanceFields(classType);
 			if (instanceFields != null && instanceFields.contains(field)) {
-				// El field existe en la clase, usar setProperty para manejar setters
 				try {
 					Reflect.setProperty(o, field, value);
 					return value;
 				} catch(e:Dynamic) {
-					// Si setProperty falla, intentar setField
 					try {
 						Reflect.setField(o, field, value);
 						return value;
 					} catch(e2:Dynamic) {
-						// Guardar en variables globales como fallback
 						var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;
 						if (className == "objects.VideoHandler" || className == "objects.MP4Handler") {
 							MusicBeatState.getVideoHandlers().set(field, value);
@@ -1715,20 +1648,16 @@ class CustomInterp extends crowplexus.hscript.Interp
 			}
 		}
 		
-		// Si llegamos aquí, el field no existe en la clase
-		// Para objetos dinámicos/anónimos, intentar setProperty
 		try {
 			Reflect.setProperty(o, field, value);
 			return value;
 		} catch(e:Dynamic) {
-			// Si falla, intentar setField
 			try {
 				Reflect.setField(o, field, value);
 				return value;
 			} catch(e2:Dynamic) {}
 		}
 		
-		// Si todo falla, guardar en variables globales como fallback
 		var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;
 		if (className == "objects.VideoHandler" || className == "objects.MP4Handler") {
 			MusicBeatState.getVideoHandlers().set(field, value);

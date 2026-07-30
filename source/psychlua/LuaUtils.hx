@@ -316,25 +316,29 @@ class LuaUtils
 		return obj;
 	}
 
-	public static function getObjectDirectly(objectName:String, ?allowMaps:Bool = false):Dynamic
+public static function getObjectDirectly(objectName:String, ?allowMaps:Bool = false):Dynamic
+{
+	switch(objectName)
 	{
-		switch(objectName)
-		{
-			case 'this' | 'instance' | 'game':
-				return getTargetInstance();
-			
-			default:
-				var obj:Dynamic = MusicBeatState.getVariables().get(objectName);
-				if(obj == null)
-				{
-					var ctx = getCurrentContext();
-					if(ctx != null && ctx.variables != null && ctx.variables.exists(objectName))
-						obj = ctx.variables.get(objectName);
-				}
-				if(obj == null) obj = getVarInArray(getTargetInstance(), objectName, allowMaps);
-				return obj;
-		}
+		case 'this' | 'instance' | 'game':
+			return getTargetInstance();
+		
+		default:
+			var obj:Dynamic = MusicBeatState.getVariables().get(objectName);
+			if(obj == null)
+			{
+				var ctx = getCurrentContext();
+				if(ctx != null && ctx.variables != null && ctx.variables.exists(objectName))
+					obj = ctx.variables.get(objectName);
+			}
+			if(obj == null) obj = getVarInArray(getTargetInstance(), objectName, allowMaps);
+			if(obj == null) {
+				var cls = Type.resolveClass(objectName);
+				if(cls != null) obj = cls;
+			}
+			return obj;
 	}
+}
 	
 	public static function isOfTypes(value:Any, types:Array<Dynamic>)
 	{

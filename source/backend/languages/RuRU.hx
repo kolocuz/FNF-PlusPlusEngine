@@ -173,7 +173,7 @@ class RuRU
         "judgement_combo" => "Комбо    ",
         "judgement_max_combo" => "Макс комбо",
 
-        "language_font" => "vcr.ttf",
+        "language_font" => "vcr_ru.ttf",
         "language_example_text" => "Это пример текста для Русского языка."
     ];
 }

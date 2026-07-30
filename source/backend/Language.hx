@@ -25,7 +25,7 @@ class Language
         ZhCN,    // Chinese (Mainland)
         ZhHK,    // Chinese (Hong Kong)
         JpJP,     // Japanese (Japan)
-		IdID      // Indonesian (Bahasa Indonesia)
+		IdID,      // Indonesian (Bahasa Indonesia)
 		RuRu      // Русский (Russian)
     ];
 

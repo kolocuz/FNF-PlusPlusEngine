@@ -26,7 +26,7 @@ class Language
         ZhHK,    // Chinese (Hong Kong)
         JpJP,     // Japanese (Japan)
 		IdID,      // Indonesian (Bahasa Indonesia)
-		RuRu      // Русский (Russian)
+		RuRU      // Русский (Russian)
     ];
 
 	public static function reloadPhrases()

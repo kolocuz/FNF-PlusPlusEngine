@@ -16,7 +16,7 @@ class Alphabet extends FlxSpriteGroup
 	public var text(default, set):String;
 
 	public var bold:Bool = false;
-	public var letters:Array<AlphaCharacter> = [];
+	public var letters:Array<Dynamic> = [];
 
 	public var isMenuItem:Bool = false;
 	public var targetY:Int = 0;
@@ -29,7 +29,7 @@ class Alphabet extends FlxSpriteGroup
 	public var rows:Int = 0;
 
 	public var distancePerItem:FlxPoint = new FlxPoint(20, 120);
-	public var startPosition:FlxPoint = new FlxPoint(0, 0); //for the calculations
+	public var startPosition:FlxPoint = new FlxPoint(0, 0);
 
 	public function new(x:Float, y:Float, text:String = "", ?bold:Bool = true)
 	{
@@ -65,6 +65,7 @@ class Alphabet extends FlxSpriteGroup
 	{
 		for (letter in letters)
 		{
+			if (Std.isOfType(letter, FlxText)) continue;
 			var newOffset:Float = 0;
 			switch(alignment)
 			{
@@ -98,10 +99,13 @@ class Alphabet extends FlxSpriteGroup
 		while (i > 0)
 		{
 			--i;
-			var letter:AlphaCharacter = letters[i];
+			var letter = letters[i];
 			if(letter != null)
 			{
-				letter.kill();
+				if (Std.isOfType(letter, FlxText))
+					cast(letter, FlxText).destroy();
+				else
+					letter.kill();
 				letters.remove(letter);
 				remove(letter);
 			}
@@ -115,11 +119,8 @@ class Alphabet extends FlxSpriteGroup
 		var lastX:Float = scale.x;
 		var lastY:Float = scale.y;
 		if(newY == null) newY = newX;
-		@:bypassAccessor
-			scaleX = newX;
-		@:bypassAccessor
-			scaleY = newY;
-
+		@:bypassAccessor scaleX = newX;
+		@:bypassAccessor scaleY = newY;
 		scale.x = newX;
 		scale.y = newY;
 		softReloadLetters(newX / lastX, newY / lastY);
@@ -128,7 +129,6 @@ class Alphabet extends FlxSpriteGroup
 	private function set_scaleX(value:Float)
 	{
 		if (value == scaleX) return value;
-
 		var ratio:Float = value / scale.x;
 		scale.x = value;
 		scaleX = value;
@@ -139,7 +139,6 @@ class Alphabet extends FlxSpriteGroup
 	private function set_scaleY(value:Float)
 	{
 		if (value == scaleY) return value;
-
 		var ratio:Float = value / scale.y;
 		scale.y = value;
 		scaleY = value;
@@ -150,10 +149,9 @@ class Alphabet extends FlxSpriteGroup
 	public function softReloadLetters(ratioX:Float = 1, ratioY:Null<Float> = null)
 	{
 		if(ratioY == null) ratioY = ratioX;
-
 		for (letter in letters)
 		{
-			if(letter != null)
+			if(letter != null && !Std.isOfType(letter, FlxText))
 			{
 				letter.setupAlphaCharacter(
 					(letter.x - x) * ratioX + x,
@@ -192,10 +190,16 @@ class Alphabet extends FlxSpriteGroup
 	private function createLetters(newText:String)
 	{
 		var consecutiveSpaces:Int = 0;
-
 		var xPos:Float = 0;
 		var rowData:Array<Float> = [];
 		rows = 0;
+
+		#if TRANSLATIONS_ALLOWED
+		var fallbackFont:String = Language.getPhrase('language_font', 'vcr.ttf');
+		#else
+		var fallbackFont:String = 'vcr.ttf';
+		#end
+
 		for (i in 0...newText.length)
 		{
 			var character:String = newText.charAt(i);
@@ -204,8 +208,11 @@ class Alphabet extends FlxSpriteGroup
 				var spaceChar:Bool = (character == " " || (bold && character == "_"));
 				if (spaceChar) consecutiveSpaces++;
 
-				var isAlphabet:Bool = AlphaCharacter.isTypeAlphabet(character.toLowerCase());
-				if (AlphaCharacter.allLetters.exists(character.toLowerCase()) && (!bold || !spaceChar))
+				var charLower:String = character.toLowerCase();
+				var isAlphabet:Bool = AlphaCharacter.isTypeAlphabet(charLower);
+				var existsInSprite:Bool = AlphaCharacter.allLetters.exists(charLower);
+
+				if ((existsInSprite || isAlphabet) && (!bold || !spaceChar))
 				{
 					if (consecutiveSpaces > 0)
 					{
@@ -219,22 +226,34 @@ class Alphabet extends FlxSpriteGroup
 					}
 					consecutiveSpaces = 0;
 
-					var letter:AlphaCharacter = cast recycle(AlphaCharacter, true);
-					letter.scale.x = scaleX;
-					letter.scale.y = scaleY;
-					letter.rowWidth = 0;
-
-					letter.setupAlphaCharacter(xPos, rows * Y_PER_ROW * scale.y, character, bold);
-					@:privateAccess letter.parent = this;
-
-					letter.row = rows;
-					var off:Float = 0;
-					if(!bold) off = 2;
-					xPos += letter.width + (letter.letterOffset[0] + off) * scale.x;
-					rowData[rows] = xPos;
-
-					add(letter);
-					letters.push(letter);
+					if (existsInSprite)
+					{
+						var letter:AlphaCharacter = cast recycle(AlphaCharacter, true);
+						letter.scale.x = scaleX;
+						letter.scale.y = scaleY;
+						letter.rowWidth = 0;
+						letter.setupAlphaCharacter(xPos, rows * Y_PER_ROW * scale.y, character, bold);
+						@:privateAccess letter.parent = this;
+						letter.row = rows;
+						var off:Float = (!bold) ? 2 : 0;
+						xPos += letter.width + (letter.letterOffset[0] + off) * scale.x;
+						rowData[rows] = xPos;
+						add(letter);
+						letters.push(letter);
+					}
+					else
+					{
+						var txt:FlxText = new FlxText(xPos, rows * Y_PER_ROW * scale.y, 0, character, Std.int(80 * scale.y));
+						txt.setFormat(Paths.font(fallbackFont), Std.int(80 * scale.y), FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+						txt.borderSize = 2;
+						txt.scale.set(scaleX, scaleY);
+						txt.updateHitbox();
+						add(txt);
+						letters.push(txt);
+						var off:Float = (!bold) ? 2 : 0;
+						xPos += txt.width + off * scale.x;
+						rowData[rows] = xPos;
+					}
 				}
 			}
 			else
@@ -246,7 +265,8 @@ class Alphabet extends FlxSpriteGroup
 
 		for (letter in letters)
 		{
-			letter.rowWidth = rowData[letter.row] / scale.x;
+			if (Std.isOfType(letter, AlphaCharacter))
+				letter.rowWidth = rowData[letter.row] / scale.x;
 		}
 
 		if(letters.length > 0) rows++;
@@ -258,12 +278,6 @@ class Alphabet extends FlxSpriteGroup
 // ALPHABET LETTERS, SYMBOLS AND NUMBERS //
 ///////////////////////////////////////////
 
-/*enum LetterType
-{
-	ALPHABET;
-	NUMBER_OR_SYMBOL;
-}*/
-
 typedef Letter = {
 	?anim:Null<String>,
 	?offsets:Array<Float>,
@@ -272,10 +286,6 @@ typedef Letter = {
 
 class AlphaCharacter extends FlxSprite
 {
-	//public static var alphabet:String = "abcdefghijklmnopqrstuvwxyz";
-	//public static var numbers:String = "1234567890";
-	//public static var symbols:String = "|~#$%()*+-:;<=>@[]^_.,'!?";
-
 	public var image(default, set):String;
 
 	public static var allLetters:Map<String, Null<Letter>>;
@@ -325,7 +335,7 @@ class AlphaCharacter extends FlxSprite
 					var char:String = data.allowed.charAt(i);
 					if(char == ' ') continue;
 					
-					allLetters.set(char.toLowerCase(), null); //Allows character to be used in Alphabet
+					allLetters.set(char.toLowerCase(), null);
 				}
 			}
 
@@ -352,7 +362,7 @@ class AlphaCharacter extends FlxSprite
 	}
 
 	var parent:Alphabet;
-	public var alignOffset:Float = 0; //Don't change this
+	public var alignOffset:Float = 0;
 	public var letterOffset:Array<Float> = [0, 0];
 
 	public var row:Int = 0;
@@ -418,7 +428,7 @@ class AlphaCharacter extends FlxSprite
 		updateHitbox();
 	}
 
-	public static function isTypeAlphabet(c:String) // thanks kade
+	public static function isTypeAlphabet(c:String)
 	{
 		var ascii = StringTools.fastCodeAt(c, 0);
 		return (ascii >= 65 && ascii <= 90)
@@ -430,7 +440,7 @@ class AlphaCharacter extends FlxSprite
 
 	private function set_image(name:String)
 	{
-		if(frames == null) //first setup
+		if(frames == null)
 		{
 			image = name;
 			frames = getAlphabetFrames(name);
@@ -439,9 +449,7 @@ class AlphaCharacter extends FlxSprite
 
 		var lastAnim:String = null;
 		if (animation != null)
-		{
 			lastAnim = animation.name;
-		}
 		image = name;
 		frames = getAlphabetFrames(name);
 		this.scale.x = parent.scaleX;
@@ -452,7 +460,6 @@ class AlphaCharacter extends FlxSprite
 		{
 			animation.addByPrefix(lastAnim, lastAnim, 24);
 			animation.play(lastAnim, true);
-			
 			updateHitbox();
 		}
 		return name;
@@ -460,10 +467,7 @@ class AlphaCharacter extends FlxSprite
 
 	public function updateLetterOffset()
 	{
-		if (animation.curAnim == null)
-		{
-			return;
-		}
+		if (animation.curAnim == null) return;
 
 		var add:Float = 110;
 		if(animation.curAnim.name.endsWith('bold'))

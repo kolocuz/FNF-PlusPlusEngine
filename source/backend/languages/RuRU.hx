@@ -523,7 +523,7 @@ class RuRU
         "controls" => "Управление",
         "mobile_settings" => "Мобильные настройки",
         "notes" => "Цвета нот",
-        "language_font" => "NotoSansMono.ttf",
+        "language_font" => "vcr_ru.ttf",
         "language_example_text" => "Это пример текста для Русского языка."
     ];
 }

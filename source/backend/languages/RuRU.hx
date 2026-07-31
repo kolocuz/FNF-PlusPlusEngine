@@ -56,7 +56,7 @@ class RuRU
         // Меню паузы
         "pause_resume" => "Продолжить",
         "pause_restart_song" => "Рестарт песни",
-        "pause_leave_charting_mode" => "Выйти из чартинга",
+        "pause_leave_charting_mode" => "Выйти из редактора уровня",
         "pause_skip_time" => "Промотать время",
         "pause_end_song" => "Завершить песню",
         "pause_change_difficulty" => "Сменить сложность",
@@ -66,8 +66,8 @@ class RuRU
         "pause_exit_to_menu" => "Выйти в меню",
         "pause_back" => "Назад",
         "practice_mode" => "Тренировка",
-        "charting_mode" => "Чартинг",
-        "blueballed" => "Синие яйца: {1}", // Blueballed = classic fnf meme, оставляем дословно для фанатов
+        "charting_mode" => "Редактор уровня",
+        "blueballed" => "Синие яйца: {1}",
 
         // Режим Истории
         "week_score" => "СЧЁТ НЕДЕЛИ: {1}",
@@ -77,7 +77,7 @@ class RuRU
         "storyname_week3" => "Пико",
         "storyname_week4" => "Мамочка-Убийца",
         "storyname_week5" => "Красный Снег",
-        "storyname_week6" => "Симулятор Ненависти с уч. Moawling",
+        "storyname_week6" => "Симулятор Ненависти с FT. Moawling",
         "storyname_week7" => "Танкист",
         "storyname_weekend1" => "Просроченные Долги",
 
@@ -398,7 +398,7 @@ class RuRU
         "difficulty_easy" => "Легко",
         "difficulty_normal" => "Нормально",
         "difficulty_hard" => "Хард",
-        "difficulty_erect" => "Стояк", // Мемная сложность fnf, оставляем
+        "difficulty_erect" => "Эксперт",
         "difficulty_nightmare" => "Кошмар",
 
         // Отладка и время

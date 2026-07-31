@@ -200,7 +200,7 @@ class Alphabet extends FlxSpriteGroup
 		}
 	}
 
-	private static var Y_PER_ROW:Float = 45; // Уменьшено с 85
+	private static var Y_PER_ROW:Float = 45;
 
 	private function createLetters(newText:String)
 	{
@@ -215,11 +215,9 @@ class Alphabet extends FlxSpriteGroup
 		var fallbackFont:String = 'vcr.ttf';
 		#end
 
-		// Загружаем данные для спрайтов если они нужны
 		if (AlphaCharacter.allLetters == null)
 			AlphaCharacter.loadAlphabetData();
 
-		// Определяем размер шрифта
 		var size:Int = Std.int(letterSize * scale.y);
 		if (size < 8) size = 8;
 		if (size > 200) size = 200;
@@ -237,21 +235,19 @@ class Alphabet extends FlxSpriteGroup
 					continue;
 				}
 
-				// Проверяем, есть ли символ в алфавите (для спрайтов)
 				var charLower:String = character.toLowerCase();
 				var hasSprite:Bool = AlphaCharacter.allLetters.exists(charLower);
 				var isAscii:Bool = (StringTools.fastCodeAt(character, 0) <= 127);
 
-				// Используем спрайт если он есть, иначе текст
 				if (hasSprite && isAscii)
 				{
 					// Создаем спрайт
 					var alphaChar:AlphaCharacter = new AlphaCharacter();
-					alphaChar.parent = this;
+					alphaChar.setParent(this); 
 					alphaChar.setupAlphaCharacter(xPos + x, rows * (Y_PER_ROW * scale.y) + y, character, bold);
 					
 					// Применяем масштаб
-					alphaChar.scale.set(scaleX * 0.7, scaleY * 0.7); // Немного уменьшаем спрайты
+					alphaChar.scale.set(scaleX * 0.7, scaleY * 0.7);
 					alphaChar.updateHitbox();
 					
 					add(alphaChar);
@@ -260,7 +256,6 @@ class Alphabet extends FlxSpriteGroup
 				}
 				else
 				{
-					// Создаем текст для любых других символов
 					var txt:FlxText = new FlxText(xPos, rows * (Y_PER_ROW * scale.y), 0, character, size);
 					txt.setFormat(Paths.font(fallbackFont), size, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 					txt.borderSize = 2;
@@ -269,12 +264,11 @@ class Alphabet extends FlxSpriteGroup
 					add(txt);
 					letters.push(txt);
 					
-					// Ширина символа с учетом отступа
 					var charWidth:Float = txt.width + letterSpacing * scale.x;
 					if (character == "." || character == "," || character == "!" || character == "?")
-						charWidth *= 0.6; // Узкие символы
+						charWidth *= 0.6;
 					else if (character == "W" || character == "M" || character == "Ш" || character == "Щ")
-						charWidth *= 1.1; // Широкие символы
+						charWidth *= 1.1; 
 						
 					xPos += charWidth;
 				}
@@ -351,7 +345,6 @@ class AlphaCharacter extends FlxSprite
 			var data:Dynamic = Json.parse(rawData);
 			getAlphabetFrames(request);
 
-			// Добавляем ВСЕ возможные символы
 			var allChars:String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?/~` ";
 			for (i in 0...allChars.length)
 			{
@@ -394,7 +387,14 @@ class AlphaCharacter extends FlxSprite
 			allLetters.set('?', {anim: 'question'});
 	}
 
-	var parent:Alphabet;
+	private var parent:Alphabet;
+	
+	// Публичный метод для установки родителя
+	public function setParent(parentRef:Alphabet):Void
+	{
+		this.parent = parentRef;
+	}
+	
 	public var alignOffset:Float = 0;
 	public var letterOffset:Array<Float> = [0, 0];
 
@@ -453,7 +453,6 @@ class AlphaCharacter extends FlxSprite
 
 			var anim:String = alphaAnim + postfix;
 			
-			// Пробуем найти анимацию
 			if (frames != null)
 			{
 				try
@@ -470,7 +469,6 @@ class AlphaCharacter extends FlxSprite
 				}
 				catch(e:Dynamic)
 				{
-					// Если анимация не найдена, используем вопросительный знак
 					postfix = ' normal';
 					anim = 'question' + postfix;
 					animation.addByPrefix(anim, anim, 24);
@@ -515,8 +513,11 @@ class AlphaCharacter extends FlxSprite
 			lastAnim = animation.name;
 		image = name;
 		frames = getAlphabetFrames(name);
-		this.scale.x = parent.scaleX;
-		this.scale.y = parent.scaleY;
+		if(parent != null)
+		{
+			this.scale.x = parent.scaleX;
+			this.scale.y = parent.scaleY;
+		}
 		alignOffset = 0;
 		
 		if (lastAnim != null && frames != null)

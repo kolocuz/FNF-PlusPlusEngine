@@ -31,6 +31,11 @@ class Alphabet extends FlxSpriteGroup
 	public var distancePerItem:FlxPoint = new FlxPoint(20, 120);
 	public var startPosition:FlxPoint = new FlxPoint(0, 0);
 
+	// Новые параметры для настройки размера
+	public var letterSize:Int = 40; // Базовый размер букв
+	public var letterSpacing:Float = 2; // Расстояние между буквами
+	public var spaceWidth:Float = 20; // Ширина пробела
+
 	public function new(x:Float, y:Float, text:String = "", ?bold:Bool = true)
 	{
 		super(x, y);
@@ -102,6 +107,8 @@ class Alphabet extends FlxSpriteGroup
 			{
 				if (Std.isOfType(letter, FlxText))
 					cast(letter, FlxText).destroy();
+				else if (Std.isOfType(letter, FlxSprite))
+					cast(letter, FlxSprite).destroy();
 				letters.remove(letter);
 				remove(letter);
 			}
@@ -147,13 +154,24 @@ class Alphabet extends FlxSpriteGroup
 		if(ratioY == null) ratioY = ratioX;
 		for (letter in letters)
 		{
-			if(letter != null && Std.isOfType(letter, FlxText))
+			if(letter != null)
 			{
-				var txt:FlxText = cast letter;
-				txt.x = (txt.x - x) * ratioX + x;
-				txt.y = (txt.y - y) * ratioY + y;
-				txt.scale.x *= ratioX;
-				txt.scale.y *= ratioY;
+				if (Std.isOfType(letter, FlxText))
+				{
+					var txt:FlxText = cast letter;
+					txt.x = (txt.x - x) * ratioX + x;
+					txt.y = (txt.y - y) * ratioY + y;
+					txt.scale.x *= ratioX;
+					txt.scale.y *= ratioY;
+				}
+				else if (Std.isOfType(letter, FlxSprite))
+				{
+					var spr:FlxSprite = cast letter;
+					spr.x = (spr.x - x) * ratioX + x;
+					spr.y = (spr.y - y) * ratioY + y;
+					spr.scale.x *= ratioX;
+					spr.scale.y *= ratioY;
+				}
 			}
 		}
 	}
@@ -182,7 +200,7 @@ class Alphabet extends FlxSpriteGroup
 		}
 	}
 
-	private static var Y_PER_ROW:Float = 85;
+	private static var Y_PER_ROW:Float = 45; // Уменьшено с 85
 
 	private function createLetters(newText:String)
 	{
@@ -197,40 +215,75 @@ class Alphabet extends FlxSpriteGroup
 		var fallbackFont:String = 'vcr.ttf';
 		#end
 
+		// Загружаем данные для спрайтов если они нужны
+		if (AlphaCharacter.allLetters == null)
+			AlphaCharacter.loadAlphabetData();
+
+		// Определяем размер шрифта
+		var size:Int = Std.int(letterSize * scale.y);
+		if (size < 8) size = 8;
+		if (size > 200) size = 200;
+
 		for (i in 0...newText.length)
 		{
 			var character:String = newText.charAt(i);
 			if(character != '\n')
 			{
-				var spaceChar:Bool = (character == " " || (bold && character == "_"));
-				if (spaceChar) consecutiveSpaces++;
-
-				var charLower:String = character.toLowerCase();
-				var isAlphabet:Bool = AlphaCharacter.isTypeAlphabet(charLower);
-				if (isAlphabet && (!bold || !spaceChar))
+				// Пробел
+				if (character == " ")
 				{
-					if (consecutiveSpaces > 0)
-					{
-						xPos += 28 * consecutiveSpaces * scaleX;
-						rowData[rows] = xPos;
-						if(!bold && xPos >= FlxG.width * 0.65)
-						{
-							xPos = 0;
-							rows++;
-						}
-					}
-					consecutiveSpaces = 0;
+					consecutiveSpaces++;
+					xPos += spaceWidth * scaleX * consecutiveSpaces;
+					continue;
+				}
 
-					var txt:FlxText = new FlxText(xPos, rows * Y_PER_ROW * scale.y, 0, character, Std.int(80 * scale.y));
-					txt.setFormat(Paths.font(fallbackFont), Std.int(80 * scale.y), FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+				// Проверяем, есть ли символ в алфавите (для спрайтов)
+				var charLower:String = character.toLowerCase();
+				var hasSprite:Bool = AlphaCharacter.allLetters.exists(charLower);
+				var isAscii:Bool = (StringTools.fastCodeAt(character, 0) <= 127);
+
+				// Используем спрайт если он есть, иначе текст
+				if (hasSprite && isAscii)
+				{
+					// Создаем спрайт
+					var alphaChar:AlphaCharacter = new AlphaCharacter();
+					alphaChar.parent = this;
+					alphaChar.setupAlphaCharacter(xPos + x, rows * (Y_PER_ROW * scale.y) + y, character, bold);
+					
+					// Применяем масштаб
+					alphaChar.scale.set(scaleX * 0.7, scaleY * 0.7); // Немного уменьшаем спрайты
+					alphaChar.updateHitbox();
+					
+					add(alphaChar);
+					letters.push(alphaChar);
+					xPos += alphaChar.width + letterSpacing * scale.x;
+				}
+				else
+				{
+					// Создаем текст для любых других символов
+					var txt:FlxText = new FlxText(xPos, rows * (Y_PER_ROW * scale.y), 0, character, size);
+					txt.setFormat(Paths.font(fallbackFont), size, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 					txt.borderSize = 2;
 					txt.scale.set(scaleX, scaleY);
 					txt.updateHitbox();
 					add(txt);
 					letters.push(txt);
-					var off:Float = (!bold) ? 2 : 0;
-					xPos += txt.width + off * scale.x;
-					rowData[rows] = xPos;
+					
+					// Ширина символа с учетом отступа
+					var charWidth:Float = txt.width + letterSpacing * scale.x;
+					if (character == "." || character == "," || character == "!" || character == "?")
+						charWidth *= 0.6; // Узкие символы
+					else if (character == "W" || character == "M" || character == "Ш" || character == "Щ")
+						charWidth *= 1.1; // Широкие символы
+						
+					xPos += charWidth;
+				}
+
+				// Перенос строки если слишком длинно
+				if (!bold && xPos >= FlxG.width * 0.65)
+				{
+					xPos = 0;
+					rows++;
 				}
 			}
 			else
@@ -243,7 +296,6 @@ class Alphabet extends FlxSpriteGroup
 		if(letters.length > 0) rows++;
 	}
 }
-
 
 ///////////////////////////////////////////
 // ALPHABET LETTERS, SYMBOLS AND NUMBERS //
@@ -299,6 +351,15 @@ class AlphaCharacter extends FlxSprite
 			var data:Dynamic = Json.parse(rawData);
 			getAlphabetFrames(request);
 
+			// Добавляем ВСЕ возможные символы
+			var allChars:String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?/~` ";
+			for (i in 0...allChars.length)
+			{
+				var char:String = allChars.charAt(i);
+				if(char != ' ')
+					allLetters.set(char.toLowerCase(), null);
+			}
+
 			if(data.allowed != null && data.allowed.length > 0)
 			{
 				for (i in 0...data.allowed.length)
@@ -306,7 +367,8 @@ class AlphaCharacter extends FlxSprite
 					var char:String = data.allowed.charAt(i);
 					if(char == ' ') continue;
 					
-					allLetters.set(char.toLowerCase(), null);
+					if (!allLetters.exists(char.toLowerCase()))
+						allLetters.set(char.toLowerCase(), null);
 				}
 			}
 
@@ -339,6 +401,7 @@ class AlphaCharacter extends FlxSprite
 	public var row:Int = 0;
 	public var rowWidth:Float = 0;
 	public var character:String = '?';
+	
 	public function new()
 	{
 		super(x, y);
@@ -365,8 +428,10 @@ class AlphaCharacter extends FlxSprite
 			this.character = character;
 			curLetter = null;
 			var lowercase:String = this.character.toLowerCase();
-			if(allLetters.exists(lowercase)) curLetter = allLetters.get(lowercase);
-			else curLetter = allLetters.get('?');
+			if(allLetters.exists(lowercase)) 
+				curLetter = allLetters.get(lowercase);
+			else 
+				curLetter = allLetters.get('?');
 
 			var postfix:String = '';
 			if(!bold)
@@ -383,17 +448,34 @@ class AlphaCharacter extends FlxSprite
 			else postfix = ' bold';
 
 			var alphaAnim:String = lowercase;
-			if(curLetter != null && curLetter.anim != null) alphaAnim = curLetter.anim;
+			if(curLetter != null && curLetter.anim != null) 
+				alphaAnim = curLetter.anim;
 
 			var anim:String = alphaAnim + postfix;
-			animation.addByPrefix(anim, anim, 24);
-			animation.play(anim, true);
-			if(animation.curAnim == null)
+			
+			// Пробуем найти анимацию
+			if (frames != null)
 			{
-				if(postfix != ' bold') postfix = ' normal';
-				anim = 'question' + postfix;
-				animation.addByPrefix(anim, anim, 24);
-				animation.play(anim, true);
+				try
+				{
+					animation.addByPrefix(anim, anim, 24);
+					animation.play(anim, true);
+					if(animation.curAnim == null)
+					{
+						if(postfix != ' bold') postfix = ' normal';
+						anim = 'question' + postfix;
+						animation.addByPrefix(anim, anim, 24);
+						animation.play(anim, true);
+					}
+				}
+				catch(e:Dynamic)
+				{
+					// Если анимация не найдена, используем вопросительный знак
+					postfix = ' normal';
+					anim = 'question' + postfix;
+					animation.addByPrefix(anim, anim, 24);
+					animation.play(anim, true);
+				}
 			}
 		}
 		updateHitbox();
@@ -408,7 +490,15 @@ class AlphaCharacter extends FlxSprite
 			|| (ascii >= 216 && ascii <= 246)
 			|| (ascii >= 248 && ascii <= 255)
 			|| (ascii >= 1040 && ascii <= 1103)  // А-я
-			|| ascii == 1025 || ascii == 1105;   // Ё, ё
+			|| ascii == 1025 || ascii == 1105    // Ё, ё
+			|| (ascii >= 48 && ascii <= 57)      // Цифры 0-9
+			|| ascii == 33 || ascii == 64 || ascii == 35 || ascii == 36  // ! @ # $
+			|| ascii == 37 || ascii == 94 || ascii == 38 || ascii == 42  // % ^ & *
+			|| ascii == 40 || ascii == 41 || ascii == 95 || ascii == 43  // ( ) _ +
+			|| ascii == 45 || ascii == 61 || ascii == 91 || ascii == 93  // - = [ ]
+			|| ascii == 123 || ascii == 125 || ascii == 124 || ascii == 59 // { } | ;
+			|| ascii == 58 || ascii == 44 || ascii == 46 || ascii == 60  // : , . <
+			|| ascii == 62 || ascii == 47 || ascii == 126 || ascii == 96; // > / ~ `
 	}
 
 	private function set_image(name:String)
@@ -429,11 +519,15 @@ class AlphaCharacter extends FlxSprite
 		this.scale.y = parent.scaleY;
 		alignOffset = 0;
 		
-		if (lastAnim != null)
+		if (lastAnim != null && frames != null)
 		{
-			animation.addByPrefix(lastAnim, lastAnim, 24);
-			animation.play(lastAnim, true);
-			updateHitbox();
+			try
+			{
+				animation.addByPrefix(lastAnim, lastAnim, 24);
+				animation.play(lastAnim, true);
+				updateHitbox();
+			}
+			catch(e:Dynamic) {}
 		}
 		return name;
 	}

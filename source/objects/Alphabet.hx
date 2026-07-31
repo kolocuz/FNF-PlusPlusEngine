@@ -65,21 +65,19 @@ class Alphabet extends FlxSpriteGroup
 	{
 		for (letter in letters)
 		{
-			if (Std.isOfType(letter, FlxText)) continue;
-			var newOffset:Float = 0;
-			switch(alignment)
+			if (Std.isOfType(letter, FlxText))
 			{
-				case CENTERED:
-					newOffset = letter.rowWidth / 2;
-				case RIGHT:
-					newOffset = letter.rowWidth;
-				default:
-					newOffset = 0;
+				var txt:FlxText = cast letter;
+				switch(alignment)
+				{
+					case CENTERED:
+						txt.alignment = CENTER;
+					case RIGHT:
+						txt.alignment = RIGHT;
+					default:
+						txt.alignment = LEFT;
+				}
 			}
-	
-			letter.offset.x -= letter.alignOffset;
-			letter.alignOffset = newOffset * scale.x;
-			letter.offset.x += letter.alignOffset;
 		}
 	}
 
@@ -104,8 +102,6 @@ class Alphabet extends FlxSpriteGroup
 			{
 				if (Std.isOfType(letter, FlxText))
 					cast(letter, FlxText).destroy();
-				else
-					letter.kill();
 				letters.remove(letter);
 				remove(letter);
 			}
@@ -151,12 +147,13 @@ class Alphabet extends FlxSpriteGroup
 		if(ratioY == null) ratioY = ratioX;
 		for (letter in letters)
 		{
-			if(letter != null && !Std.isOfType(letter, FlxText))
+			if(letter != null && Std.isOfType(letter, FlxText))
 			{
-				letter.setupAlphaCharacter(
-					(letter.x - x) * ratioX + x,
-					(letter.y - y) * ratioY + y
-				);
+				var txt:FlxText = cast letter;
+				txt.x = (txt.x - x) * ratioX + x;
+				txt.y = (txt.y - y) * ratioY + y;
+				txt.scale.x *= ratioX;
+				txt.scale.y *= ratioY;
 			}
 		}
 	}
@@ -210,9 +207,7 @@ class Alphabet extends FlxSpriteGroup
 
 				var charLower:String = character.toLowerCase();
 				var isAlphabet:Bool = AlphaCharacter.isTypeAlphabet(charLower);
-				var existsInSprite:Bool = AlphaCharacter.allLetters.exists(charLower);
-
-				if ((existsInSprite || isAlphabet) && (!bold || !spaceChar))
+				if (isAlphabet && (!bold || !spaceChar))
 				{
 					if (consecutiveSpaces > 0)
 					{
@@ -226,34 +221,16 @@ class Alphabet extends FlxSpriteGroup
 					}
 					consecutiveSpaces = 0;
 
-					if (existsInSprite)
-					{
-						var letter:AlphaCharacter = cast recycle(AlphaCharacter, true);
-						letter.scale.x = scaleX;
-						letter.scale.y = scaleY;
-						letter.rowWidth = 0;
-						letter.setupAlphaCharacter(xPos, rows * Y_PER_ROW * scale.y, character, bold);
-						@:privateAccess letter.parent = this;
-						letter.row = rows;
-						var off:Float = (!bold) ? 2 : 0;
-						xPos += letter.width + (letter.letterOffset[0] + off) * scale.x;
-						rowData[rows] = xPos;
-						add(letter);
-						letters.push(letter);
-					}
-					else
-					{
-						var txt:FlxText = new FlxText(xPos, rows * Y_PER_ROW * scale.y, 0, character, Std.int(80 * scale.y));
-						txt.setFormat(Paths.font(fallbackFont), Std.int(80 * scale.y), FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-						txt.borderSize = 2;
-						txt.scale.set(scaleX, scaleY);
-						txt.updateHitbox();
-						add(txt);
-						letters.push(txt);
-						var off:Float = (!bold) ? 2 : 0;
-						xPos += txt.width + off * scale.x;
-						rowData[rows] = xPos;
-					}
+					var txt:FlxText = new FlxText(xPos, rows * Y_PER_ROW * scale.y, 0, character, Std.int(80 * scale.y));
+					txt.setFormat(Paths.font(fallbackFont), Std.int(80 * scale.y), FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+					txt.borderSize = 2;
+					txt.scale.set(scaleX, scaleY);
+					txt.updateHitbox();
+					add(txt);
+					letters.push(txt);
+					var off:Float = (!bold) ? 2 : 0;
+					xPos += txt.width + off * scale.x;
+					rowData[rows] = xPos;
 				}
 			}
 			else
@@ -261,12 +238,6 @@ class Alphabet extends FlxSpriteGroup
 				xPos = 0;
 				rows++;
 			}
-		}
-
-		for (letter in letters)
-		{
-			if (Std.isOfType(letter, AlphaCharacter))
-				letter.rowWidth = rowData[letter.row] / scale.x;
 		}
 
 		if(letters.length > 0) rows++;
@@ -435,7 +406,9 @@ class AlphaCharacter extends FlxSprite
 			|| (ascii >= 97 && ascii <= 122)
 			|| (ascii >= 192 && ascii <= 214)
 			|| (ascii >= 216 && ascii <= 246)
-			|| (ascii >= 248 && ascii <= 255);
+			|| (ascii >= 248 && ascii <= 255)
+			|| (ascii >= 1040 && ascii <= 1103)  // А-я
+			|| ascii == 1025 || ascii == 1105;   // Ё, ё
 	}
 
 	private function set_image(name:String)

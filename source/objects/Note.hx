@@ -44,8 +44,10 @@ class Note extends FlxSprite
 		'No Animation'
 	];
 
-	public var noteDensity:Float = 1;
+	private static var _lastValidChecked:String = '';
+	private var _loadedSkin:String = '';
 
+	public var noteDensity:Float = 1;
 	public var extraData:Map<String, Dynamic> = new Map<String, Dynamic>();
 
 	public var strumTime:Float = 0;
@@ -124,6 +126,7 @@ class Note extends FlxSprite
 	public var copyY:Bool = true;
 	public var copyAngle:Bool = true;
 	public var copyAlpha:Bool = true;
+	public var copyScale:Bool = true;
 
 	public var hitHealth:Float = 0.02;
 	public var missHealth:Float = 0.1;
@@ -428,7 +431,6 @@ class Note extends FlxSprite
 	}
 
 	var _lastNoteOffX:Float = 0;
-	static var _lastValidChecked:String;
 	public var originalHeight:Float = 6;
 	public var correctionOffset:Float = 0;
 
@@ -491,7 +493,10 @@ class Note extends FlxSprite
 		}
 		else
 		{
-			frames = Paths.getSparrowAtlas(skin);
+			frames = (prevNote != null && prevNote._loadedSkin == skin && prevNote.frames != null)
+				? prevNote.frames
+				: Paths.getSparrowAtlas(skin);
+			_loadedSkin = skin;
 			loadNoteAnims();
 			if(!isSustainNote)
 			{
@@ -662,6 +667,7 @@ class Note extends FlxSprite
 		var strumY:Float = myStrum.y;
 		var strumAngle:Float = myStrum.angle;
 		var strumAlpha:Float = myStrum.alpha;
+		var strumScale:FlxPoint = myStrum.scale;
 		var strumDirection:Float = myStrum.direction;
 
 		distance = (0.45 * (Conductor.songPosition - strumTime) * songSpeed * multSpeed);
@@ -714,6 +720,13 @@ class Note extends FlxSprite
 
 			if(copyY)
 				y = strumY + offsetY + Math.sin(angleDir) * distance;
+		}
+
+		if(copyScale)
+		{
+			scale.x = strumScale.x;
+			if(!isSustainNote) scale.y = strumScale.y;
+			updateHitbox();
 		}
 	}
 

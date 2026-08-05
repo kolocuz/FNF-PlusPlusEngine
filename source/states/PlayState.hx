@@ -5845,7 +5845,6 @@ class PlayState extends MusicBeatState
 		splash.spawnSplashNote(x, y, data, note);
 		grpNoteSplashes.add(splash);
 	}
-
 override function destroy()
 {
 	#if LUA_ALLOWED
@@ -6005,10 +6004,18 @@ override function destroy()
 	}
 	
 	if (notes != null)
-		notes = [];
+	{
+		notes.forEachAlive(function(note) note.destroy());
+		notes.clear();
+		notes = null;
+	}
 	
 	if (strumLineNotes != null)
-		strumLineNotes = [];
+	{
+		strumLineNotes.forEachAlive(function(strum) strum.destroy());
+		strumLineNotes.clear();
+		strumLineNotes = null;
+	}
 	
 	if (eventNotes != null)
 		eventNotes = [];
@@ -6029,12 +6036,6 @@ override function destroy()
 	{
 		gf.destroy();
 		gf = null;
-	}
-	
-	if (stage != null)
-	{
-		stage.destroy();
-		stage = null;
 	}
 	
 	instance = null;

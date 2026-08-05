@@ -280,21 +280,23 @@ class Alphabet extends FlxSpriteGroup
 					}
 					consecutiveSpaces = 0;
 
-					var txt:FlxText = new FlxText(xPos, rows * Y_PER_ROW * scale.y, 0, character, 40);
+					var txt:FlxText = new FlxText(xPos, 0, 0, character, 40);
 					txt.setFormat(Paths.font('vcr_ru.ttf'), 40, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 					txt.borderSize = 2;
 					txt.scale.set(scaleX, scaleY);
 					txt.updateHitbox();
-					
+
+					var alphabetHeight:Float = Y_PER_ROW * scaleY;
+					txt.y = rows * Y_PER_ROW * scale.y + (alphabetHeight - txt.height) / 2;
+					txt.offset.y = 0;
+
 					add(txt);
 					letters.push(txt);
-					
+
 					var charWidth:Float = txt.width + 2 * scale.x;
 					if (character == "." || character == "," || character == "!" || character == "?")
 						charWidth *= 0.6;
-					else if (character == "W" || character == "M" || character == "Ш" || character == "Щ")
-						charWidth *= 1.1;
-						
+
 					xPos += charWidth;
 					rowData[rows] = xPos;
 				}

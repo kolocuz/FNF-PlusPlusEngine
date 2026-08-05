@@ -44,9 +44,6 @@ class Note extends FlxSprite
 		'No Animation'
 	];
 
-	private static var _lastValidChecked:String = '';
-	private var _loadedSkin:String = '';
-
 	public var noteDensity:Float = 1;
 	public var extraData:Map<String, Dynamic> = new Map<String, Dynamic>();
 
@@ -126,7 +123,6 @@ class Note extends FlxSprite
 	public var copyY:Bool = true;
 	public var copyAngle:Bool = true;
 	public var copyAlpha:Bool = true;
-	public var copyScale:Bool = true;
 
 	public var hitHealth:Float = 0.02;
 	public var missHealth:Float = 0.1;
@@ -207,7 +203,7 @@ class Note extends FlxSprite
 			switch(value)
 			{
 				case 'Hurt Note':
-					ignoreNote = false;
+					ignoreNote = mustPress;
 					rgbShader.r = 0xFF101010;
 					rgbShader.g = 0xFFFF0000;
 					rgbShader.b = 0xFF990022;
@@ -227,10 +223,8 @@ class Note extends FlxSprite
 				case 'GF Sing':
 					gfNote = true;
 			}
-			if (value != null && value.length > 1 && !defaultNoteTypes.contains(value))
-				NoteTypesConfig.applyNoteTypeData(this, value);
-			if (hitsound != 'hitsound' && (ClientPrefs.data.hitSounds != "None" || hitsoundForce) && hitsoundVolume > 0)
-				Paths.sound(hitsound);
+			if (value != null && value.length > 1) NoteTypesConfig.applyNoteTypeData(this, value);
+			if (hitsound != 'hitsound' && (ClientPrefs.data.hitSounds != "None" || hitsoundForce) && hitsoundVolume > 0) Paths.sound(hitsound);
 			noteType = value;
 		}
 		return value;
@@ -244,6 +238,9 @@ class Note extends FlxSprite
 
 		antialiasing = ClientPrefs.data.antialiasing;
 		if(createdFrom == null) createdFrom = PlayState.instance;
+
+		if (prevNote == null)
+			prevNote = this;
 
 		this.prevNote = prevNote;
 		isSustainNote = sustainNote;
@@ -279,7 +276,7 @@ class Note extends FlxSprite
 			}
 		}
 
-		if (prevNote != null)
+		if(prevNote != null)
 			prevNote.nextNote = this;
 
 		if (isSustainNote && prevNote != null)
@@ -305,16 +302,14 @@ class Note extends FlxSprite
 			{
 				prevNote.animation.play(colArray[prevNote.noteData % colArray.length] + 'hold');
 
-				var sustainMultiplier:Float = Conductor.stepCrochet / 100 * 1.05;
-				if(createdFrom != null && createdFrom.songSpeed != null)
-					sustainMultiplier *= createdFrom.songSpeed;
+				prevNote.scale.y *= Conductor.stepCrochet / 100 * 1.05;
+				if(createdFrom != null && createdFrom.songSpeed != null) prevNote.scale.y *= createdFrom.songSpeed;
 
 				if(PlayState.isPixelStage)
 				{
-					sustainMultiplier *= 1.19;
-					sustainMultiplier *= (6 / height);
+					prevNote.scale.y *= 1.19;
+					prevNote.scale.y *= (6 / height);
 				}
-				prevNote.scale.y *= sustainMultiplier;
 				prevNote.updateHitbox();
 			}
 
@@ -323,8 +318,6 @@ class Note extends FlxSprite
 				scale.y *= PlayState.daPixelZoom;
 				updateHitbox();
 			}
-
-			correctionOffset = (parent != null) ? parent.height / 2 : 0;
 			earlyHitMult = 0;
 		}
 		else if(!isSustainNote)
@@ -431,6 +424,7 @@ class Note extends FlxSprite
 	}
 
 	var _lastNoteOffX:Float = 0;
+	static var _lastValidChecked:String;
 	public var originalHeight:Float = 6;
 	public var correctionOffset:Float = 0;
 
@@ -448,6 +442,7 @@ class Note extends FlxSprite
 				skin = getDefaultNoteSkinPath(PlayState.isPixelStage) + postfix;
 			}
 		}
+		else rgbShader.enabled = false;
 
 		var animName:String = null;
 		if(animation.curAnim != null)
@@ -457,7 +452,6 @@ class Note extends FlxSprite
 
 		var skinPixel:String = skin;
 		var lastScaleY:Float = scale.y;
-		var savedMultAlpha:Float = multAlpha;
 		var skinPostfix:String = getNoteSkinPostfix();
 		var customSkin:String = skin + skinPostfix;
 		if(customSkin == _lastValidChecked || noteSkinPathExists(customSkin, PlayState.isPixelStage))
@@ -493,10 +487,7 @@ class Note extends FlxSprite
 		}
 		else
 		{
-			frames = (prevNote != null && prevNote._loadedSkin == skin && prevNote.frames != null)
-				? prevNote.frames
-				: Paths.getSparrowAtlas(skin);
-			_loadedSkin = skin;
+			frames = Paths.getSparrowAtlas(skin);
 			loadNoteAnims();
 			if(!isSustainNote)
 			{
@@ -508,17 +499,11 @@ class Note extends FlxSprite
 		if(isSustainNote)
 		{
 			scale.y = lastScaleY;
-			multAlpha = savedMultAlpha;
-			if(isSustainEnd)
-				scale.y = 1;
 		}
 		updateHitbox();
 
 		if(animName != null)
-		{
-			if(animation.getByName(animName) != null)
-				animation.play(animName, true);
-		}
+			animation.play(animName, true);
 
 		if(skin != null && skin.toLowerCase().contains('notitg'))
 		{
@@ -586,7 +571,7 @@ class Note extends FlxSprite
 
 		if (isSustainNote)
 		{
-			attemptToAddAnimationByPrefix('purpleholdend', 'purple hold end', 24, true);
+			attemptToAddAnimationByPrefix('purpleholdend', 'pruple end hold', 24, true);
 			animation.addByPrefix(colArray[noteData] + 'holdend', colArray[noteData] + ' hold end', 24, true);
 			animation.addByPrefix(colArray[noteData] + 'hold', colArray[noteData] + ' hold piece', 24, true);
 		}
@@ -639,7 +624,7 @@ class Note extends FlxSprite
 
 			if (!wasGoodHit && strumTime <= Conductor.songPosition)
 			{
-				if(!isSustainNote || (prevNote != null && prevNote.wasGoodHit && !ignoreNote))
+				if(!isSustainNote || (prevNote.wasGoodHit && !ignoreNote))
 					wasGoodHit = true;
 			}
 		}
@@ -653,12 +638,8 @@ class Note extends FlxSprite
 
 	override public function destroy()
 	{
-		if (tail != null) tail = [];
-		parent = null;
-		prevNote = null;
-		nextNote = null;
-		_lastValidChecked = '';
 		super.destroy();
+		_lastValidChecked = '';
 	}
 
 	public function followStrumNote(myStrum:StrumNote, fakeCrochet:Float, songSpeed:Float = 1)
@@ -667,119 +648,58 @@ class Note extends FlxSprite
 		var strumY:Float = myStrum.y;
 		var strumAngle:Float = myStrum.angle;
 		var strumAlpha:Float = myStrum.alpha;
-		var strumScale:FlxPoint = myStrum.scale;
 		var strumDirection:Float = myStrum.direction;
 
 		distance = (0.45 * (Conductor.songPosition - strumTime) * songSpeed * multSpeed);
 		if (!myStrum.downScroll) distance *= -1;
 
 		var angleDir = strumDirection * Math.PI / 180;
-		if (isSustainNote)
-			angle = strumDirection - 90 + offsetAngle;
-		else if (copyAngle)
-			angle = strumAngle + offsetAngle;
-
-		if (isSustainNote)
-			flipY = myStrum.downScroll;
+		if (copyAngle)
+			angle = strumDirection - 90 + strumAngle + offsetAngle;
 
 		if(copyAlpha)
 			alpha = strumAlpha * multAlpha;
 
-		if (isSustainNote)
+		if(copyX)
+			x = strumX + offsetX + Math.cos(angleDir) * distance;
+
+		if(copyY)
 		{
-			var axisX:Float = Math.cos(angleDir);
-			var axisY:Float = Math.sin(angleDir);
-			var sustainCorrectionOffset:Float = correctionOffset;
-			if (!PlayState.isPixelStage)
-				sustainCorrectionOffset = myStrum.downScroll ? 0 : ((parent != null) ? parent.height / 2 : correctionOffset);
-
-			var sustainVisualOffset:Float = 0;
-
-			if(myStrum.downScroll)
+			y = strumY + offsetY + correctionOffset + Math.sin(angleDir) * distance;
+			if(myStrum.downScroll && isSustainNote)
 			{
-				final sustainScaleY = isSustainEnd ? 1.0 : scale.y;
-				sustainVisualOffset = (frameHeight * sustainScaleY) - (Note.swagWidth / 2);
 				if(PlayState.isPixelStage)
-					sustainVisualOffset += PlayState.daPixelZoom * 9.5;
+				{
+					y -= PlayState.daPixelZoom * 9.5;
+				}
+				y -= (frameHeight * scale.y) - (Note.swagWidth / 2);
 			}
-
-			var alongAxis:Float = distance + sustainCorrectionOffset - sustainVisualOffset + offsetY;
-			var noteX:Float = strumX + offsetX + (axisX * alongAxis);
-			var noteY:Float = strumY + (axisY * alongAxis);
-
-			if(copyX)
-				x = noteX;
-
-			if(copyY)
-				y = noteY;
-		}
-		else
-		{
-			if(copyX)
-				x = strumX + offsetX + Math.cos(angleDir) * distance;
-
-			if(copyY)
-				y = strumY + offsetY + Math.sin(angleDir) * distance;
-		}
-
-		if(copyScale)
-		{
-			scale.x = strumScale.x;
-			if(!isSustainNote) scale.y = strumScale.y;
-			updateHitbox();
 		}
 	}
 
 	public function clipToStrumNote(myStrum:StrumNote)
 	{
-		clipRect = null;
-
-		if(!isSustainNote) return;
-
-		var holdActive:Bool = false;
-		if(mustPress && PlayState.instance != null)
+		var center:Float = myStrum.y + offsetY + Note.swagWidth / 2;
+		if((mustPress || !ignoreNote) && (wasGoodHit || (prevNote.wasGoodHit && !canBeHit)))
 		{
-			var controls = PlayState.instance.controls;
-			switch(noteData)
+			var swagRect:FlxRect = clipRect;
+			if(swagRect == null) swagRect = new FlxRect(0, 0, frameWidth, frameHeight);
+
+			if (myStrum.downScroll)
 			{
-				case 0: holdActive = controls.NOTE_LEFT;
-				case 1: holdActive = controls.NOTE_DOWN;
-				case 2: holdActive = controls.NOTE_UP;
-				case 3: holdActive = controls.NOTE_RIGHT;
+				if(y - offset.y * scale.y + height >= center)
+				{
+					swagRect.width = frameWidth;
+					swagRect.height = (center - y) / scale.y;
+					swagRect.y = frameHeight - swagRect.height;
+				}
 			}
-		}
-
-		if(!(wasGoodHit || (prevNote != null && prevNote.wasGoodHit && !holdActive)))
-			return;
-
-		var angleDir:Float = myStrum.direction * Math.PI / 180;
-		var axisX:Float = Math.cos(angleDir);
-		var axisY:Float = Math.sin(angleDir);
-		var clipOffset:Float = Note.swagWidth / 2;
-		var centerX:Float = myStrum.x + offsetX + (axisX * clipOffset);
-		var centerY:Float = myStrum.y + offsetY + (axisY * clipOffset);
-		var centerProjection:Float = (centerX * axisX) + (centerY * axisY);
-		var noteProjection:Float = (x * axisX) + (y * axisY);
-		var localFrameHeight:Float = height / Math.max(scale.y, 0.00001);
-
-		var swagRect:FlxRect = new FlxRect(0, 0, frameWidth, frameHeight);
-
-		if (myStrum.downScroll)
-		{
-			var visibleWorldLength:Float = centerProjection - noteProjection;
-			if(visibleWorldLength >= 0)
+			else if (y + offset.y * scale.y <= center)
 			{
-				swagRect.width = frameWidth;
-				swagRect.height = FlxMath.bound(visibleWorldLength / Math.max(scale.y, 0.00001), 0, localFrameHeight);
-				swagRect.y = frameHeight - swagRect.height;
-				clipRect = swagRect;
+				swagRect.y = (center - y) / scale.y;
+				swagRect.width = width / scale.x;
+				swagRect.height = (height / scale.y) - swagRect.y;
 			}
-		}
-		else if (noteProjection <= centerProjection)
-		{
-			swagRect.y = FlxMath.bound((centerProjection - noteProjection) / Math.max(scale.y, 0.00001), 0, localFrameHeight);
-			swagRect.width = width / scale.x;
-			swagRect.height = localFrameHeight - swagRect.y;
 			clipRect = swagRect;
 		}
 	}
@@ -787,16 +707,7 @@ class Note extends FlxSprite
 	@:noCompletion
 	override function set_clipRect(rect:FlxRect):FlxRect
 	{
-		if (rect != null)
-		{
-			if (clipRect == null)
-				clipRect = new FlxRect();
-			clipRect.copyFrom(rect);
-		}
-		else
-		{
-			clipRect = null;
-		}
+		clipRect = rect;
 
 		if (frames != null)
 			frame = frames.frames[animation.frameIndex];

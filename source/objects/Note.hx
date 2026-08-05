@@ -425,6 +425,7 @@ class Note extends FlxSprite
 
 	var _lastNoteOffX:Float = 0;
 	static var _lastValidChecked:String;
+	var _loadedSkin:String;
 	public var originalHeight:Float = 6;
 	public var correctionOffset:Float = 0;
 
@@ -452,6 +453,7 @@ class Note extends FlxSprite
 
 		var skinPixel:String = skin;
 		var lastScaleY:Float = scale.y;
+		var savedMultAlpha:Float = multAlpha;
 		var skinPostfix:String = getNoteSkinPostfix();
 		var customSkin:String = skin + skinPostfix;
 		if(customSkin == _lastValidChecked || noteSkinPathExists(customSkin, PlayState.isPixelStage))
@@ -487,7 +489,10 @@ class Note extends FlxSprite
 		}
 		else
 		{
-			frames = Paths.getSparrowAtlas(skin);
+			frames = (prevNote != null && prevNote._loadedSkin == skin && prevNote.frames != null)
+				? prevNote.frames
+				: Paths.getSparrowAtlas(skin);
+			_loadedSkin = skin;
 			loadNoteAnims();
 			if(!isSustainNote)
 			{
@@ -499,6 +504,9 @@ class Note extends FlxSprite
 		if(isSustainNote)
 		{
 			scale.y = lastScaleY;
+			multAlpha = savedMultAlpha;
+			if(isSustainEnd)
+				scale.y = 1;
 		}
 		updateHitbox();
 

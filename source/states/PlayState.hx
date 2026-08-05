@@ -5354,42 +5354,60 @@ class PlayState extends MusicBeatState
 					keyReleased(i);
 	}
 
-	function noteMiss(daNote:Note):Void 
+function noteMiss(daNote:Note):Void 
+{
+	var shouldApplyMiss = true;
+	var holdSplashToHide:Dynamic = null;
+	
+	if (daNote.isSustainNote && daNote.parent != null)
 	{
-		notes.forEachAlive(function(note:Note) {
-			if (daNote != note && daNote.mustPress && daNote.noteData == note.noteData && daNote.isSustainNote == note.isSustainNote && Math.abs(daNote.strumTime - note.strumTime) < 1) {
-				invalidateNote(note);
-			}
-		});
-
-		var shouldApplyMiss = true;
-		if (daNote.isSustainNote && daNote.parent != null) {
-			var parent = daNote.parent;
-			if (!parent.holdMissed) {
-				parent.holdMissed = true;
+		var parent = daNote.parent;
+		if (!parent.holdMissed)
+		{
+			parent.holdMissed = true;
+			if (parent.tail != null && parent.tail.length > 0)
+			{
 				var lastTail = parent.tail[parent.tail.length - 1];
-				missedHoldEndTime = lastTail.strumTime;
-				missedHoldParent = parent;
-			} else {
-				shouldApplyMiss = false;
+				if (lastTail != null)
+				{
+					missedHoldEndTime = lastTail.strumTime;
+					missedHoldParent = parent;
+					
+					if (lastTail.extraData != null && lastTail.extraData.exists('holdSplash'))
+						holdSplashToHide = lastTail.extraData['holdSplash'];
+				}
 			}
 		}
-
-		final end:Note = daNote.isSustainNote ? daNote.parent.tail[daNote.parent.tail.length - 1] : daNote.tail[daNote.tail.length - 1];
-		if (end != null && end.extraData['holdSplash'] != null) {
-			end.extraData['holdSplash'].visible = false;
+		else
+		{
+			shouldApplyMiss = false;
 		}
-
-		if (shouldApplyMiss) {
-			noteMissCommon(daNote.noteData, daNote, true);
-		}
-
-		var noteIndex:Int = notes.members.indexOf(daNote);
-		stagesFunc(function(stage:BaseStage) stage.noteMiss(daNote));
-		var result:Dynamic = callOnLuas('noteMiss', [noteIndex, daNote.noteData, daNote.noteType, daNote.isSustainNote]);
-		if(result != LuaUtils.Function_Stop && result != LuaUtils.Function_StopHScript && result != LuaUtils.Function_StopAll)
-			callOnHScript('noteMiss', [daNote]);
 	}
+	else if (!daNote.isSustainNote && daNote.tail != null && daNote.tail.length > 0)
+	{
+		var end = daNote.tail[daNote.tail.length - 1];
+		if (end != null && end.extraData != null && end.extraData.exists('holdSplash'))
+			holdSplashToHide = end.extraData['holdSplash'];
+	}
+
+	if (holdSplashToHide != null)
+		holdSplashToHide.visible = false;
+
+	if (shouldApplyMiss)
+		noteMissCommon(daNote.noteData, daNote, true);
+
+	var noteIndex:Int = notes.members.indexOf(daNote);
+	stagesFunc(function(stage:BaseStage) stage.noteMiss(daNote));
+	var result:Dynamic = callOnLuas('noteMiss', [noteIndex, daNote.noteData, daNote.noteType, daNote.isSustainNote]);
+	if (result != LuaUtils.Function_Stop && result != LuaUtils.Function_StopHScript && result != LuaUtils.Function_StopAll)
+		callOnHScript('noteMiss', [daNote]);
+
+	notes.forEachAlive(function(note:Note) {
+		if (daNote != note && daNote.mustPress && daNote.noteData == note.noteData && daNote.isSustainNote == note.isSustainNote && Math.abs(daNote.strumTime - note.strumTime) < 1) {
+			invalidateNote(note);
+		}
+	});
+}
 
 	function noteMissPress(direction:Int = 1):Void //You pressed a key when there was no notes to press for this key
 	{

@@ -5845,76 +5845,18 @@ class PlayState extends MusicBeatState
 		splash.spawnSplashNote(x, y, data, note);
 		grpNoteSplashes.add(splash);
 	}
+
 override function destroy()
 {
 	#if LUA_ALLOWED
 	psychlua.LuaVideo.clearAll();
-	#end
 	
-	if (windowResizedByScript)
-	{
-		#if windows
-		var window = openfl.Lib.application.window;
-		FlxG.resizeWindow(1280, 720);
-		window.y = Math.floor((openfl.system.Capabilities.screenResolutionY / 2) - (720 / 2));
-		window.x = Math.floor((openfl.system.Capabilities.screenResolutionX / 2) - (1280 / 2));
-		FlxG.scaleMode = new flixel.system.scaleModes.RatioScaleMode();
-		#end
-	}
-
-	if (psychlua.CustomSubstate.instance != null)
-	{
-		closeSubState();
-		resetSubState();
-	}
-
-	if (endCountdownText != null)
-	{
-		remove(endCountdownText);
-		endCountdownText.destroy();
-		endCountdownText = null;
-	}
-	
-	if (breakTimerHud != null)
-	{
-		breakTimerHud.destroyFrom(this);
-		breakTimerHud = null;
-	}
-	
-	if (stepmaniaHud != null)
-	{
-		stepmaniaHud.destroyFrom(this, uiGroup);
-		stepmaniaHud = null;
-	}
-	
-	destroyGameplayRuntimeBridge();
-	
-	#if MODCHARTS_NOTITG_ALLOWED
-	if (modchartInitCallback != null)
-	{
-		FlxG.signals.postUpdate.remove(modchartInitCallback);
-		modchartInitCallback = null;
-	}
-	destroyModchartDebugOverlay();
-	#end
-	
-	for (i in 0...botplayKeyReleaseTimers.length)
-	{
-		if (botplayKeyReleaseTimers[i] != null)
-		{
-			botplayKeyReleaseTimers[i].cancel();
-			botplayKeyReleaseTimers[i] = null;
-		}
-	}
-
-	#if LUA_ALLOWED
 	var luaScripts = luaArray != null ? luaArray.copy() : [];
 	for (lua in luaScripts)
 	{
 		if (lua != null)
 		{
-			if (!lua.closed)
-				lua.call('onDestroy', []);
+			if (!lua.closed) lua.call('onDestroy', []);
 			lua.stop();
 		}
 	}
@@ -5928,121 +5870,34 @@ override function destroy()
 	{
 		if (script != null)
 		{
-			if (script.exists('onDestroy'))
-				script.call('onDestroy');
+			if (script.exists('onDestroy')) script.call('onDestroy');
 			script.destroy();
 		}
 	}
 	hscriptArray = [];
 	#end
-	
-	stagesFunc(function(stage:BaseStage) stage.destroy());
 
-	#if VIDEOS_ALLOWED
-	if (videoCutscene != null)
-	{
-		videoCutscene.destroy();
-		videoCutscene = null;
-	}
-	#end
+	Note.globalRgbShaders = [];
+	backend.NoteTypesConfig.clearNoteTypesData();
+	NoteSplash.configs.clear();
+	NoteSplash.clearCache();
+
+	MusicBeatState.globalVariables.clear();
+	MusicBeatState.publicVariables.clear();
+	MusicBeatState.staticVariables.clear();
 
 	FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyPress);
 	FlxG.stage.removeEventListener(KeyboardEvent.KEY_UP, onKeyRelease);
 
-	FlxG.camera.setFilters([]);
-
-	#if FLX_PITCH
-	FlxG.sound.music.pitch = 1;
-	#end
-	
-	FlxG.animationTimeScale = 1;
-
-	Note.globalRgbShaders = [];
-	backend.NoteTypesConfig.clearNoteTypesData();
-
-	NoteSplash.configs.clear();
-	NoteSplash.clearCache();
-	
-	#if MODCHARTS_NOTITG_ALLOWED
-	if (modchart.Manager.instance != null)
-	{
-		var manager = modchart.Manager.instance;
-		remove(manager, true);
-		manager.destroy();
-		modchart.Manager.instance = null;
-	}
-	#end
-
-	if (Main.fpsVar != null)
-	{
-		Main.fpsVar.modAuthor = "";
-		Main.fpsVar.luaScriptsLoaded = 0;
-		Main.fpsVar.luaScriptsFailed = 0;
-		Main.fpsVar.hscriptsLoaded = 0;
-		Main.fpsVar.hscriptsFailed = 0;
-	}
-	
-	if (pauseButton != null)
-	{
-		remove(pauseButton);
-		pauseButton.destroy();
-		pauseButton = null;
-	}
-	
-	if (uiGroup != null)
-	{
-		uiGroup.forEachAlive(function(sprite) sprite.destroy());
-		uiGroup.clear();
-		uiGroup = null;
-	}
-	
-	if (noteGroup != null)
-	{
-		noteGroup.forEachAlive(function(sprite) sprite.destroy());
-		noteGroup.clear();
-		noteGroup = null;
-	}
-	
-	if (notes != null)
-	{
-		notes.forEachAlive(function(note) note.destroy());
-		notes.clear();
-		notes = null;
-	}
-	
-	if (strumLineNotes != null)
-	{
-		strumLineNotes.forEachAlive(function(strum) strum.destroy());
-		strumLineNotes.clear();
-		strumLineNotes = null;
-	}
-	
-	if (eventNotes != null)
-		eventNotes = [];
-	
-	if (boyfriend != null)
-	{
-		boyfriend.destroy();
-		boyfriend = null;
-	}
-	
-	if (dad != null)
-	{
-		dad.destroy();
-		dad = null;
-	}
-	
-	if (gf != null)
-	{
-		gf.destroy();
-		gf = null;
-	}
-	
-	instance = null;
-	shutdownThread = true;
 	FlxG.signals.preUpdate.remove(checkForResync);
-	
+
+	instance = null;
+
 	super.destroy();
+
+	#if cpp
+	cpp.vm.Gc.run(true);
+	#end
 }
 		
 var lastStepHit:Int = -1;

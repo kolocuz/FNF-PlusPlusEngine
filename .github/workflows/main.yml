@@ -64,6 +64,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Cache Haxelib
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.haxelib
+            ~/.cache/lime
+          key: linux-haxe-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v1
+          restore-keys: |
+            linux-haxe-
+
       - name: Setup Haxe
         run: |
           sudo add-apt-repository ppa:haxe/releases -y
@@ -99,6 +109,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.haxelib
+            ~/.cache/lime
+          key: android-haxe-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v1
+          restore-keys: |
+            android-haxe-
+
+      - name: Cache Android SDK & NDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Android
+            ~/.android
+          key: android-sdk-${{ hashFiles('**/Project.xml') }}-v1
+          restore-keys: |
+            android-sdk-
 
       - name: Setup Haxe
         run: |
@@ -166,6 +196,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\haxelib
+            %USERPROFILE%\.haxelib
+            %USERPROFILE%\.cache\lime
+          key: windows-haxe-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v1
+          restore-keys: |
+            windows-haxe-
 
       - uses: krdlab/setup-haxe@master
         with:

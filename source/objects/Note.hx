@@ -644,11 +644,16 @@ class Note extends FlxSprite
 		}
 	}
 
-	override public function destroy()
-	{
-		super.destroy();
-		_lastValidChecked = '';
-	}
+override public function destroy()
+{
+	if (extraData != null) extraData.clear();
+	if (tail != null) tail = [];
+	parent = null;
+	prevNote = null;
+	nextNote = null;
+	_lastValidChecked = '';
+	super.destroy();
+}
 
 	public function followStrumNote(myStrum:StrumNote, fakeCrochet:Float, songSpeed:Float = 1)
 	{

@@ -62,55 +62,39 @@ jobs:
     if: needs.check_platforms.outputs.build_linux == 'true'
 
     steps:
-      - name: Restore Libraries Cache
-        id: load-lib-cache
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        id: cache-haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v1
+          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v2
           enableCrossOsArchive: true
           path: |
             .haxelib/
+            ~/.cache/lime
           restore-keys: |
             haxe-libs-
 
-      - name: Checkout
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v5
-
       - name: Setup Haxe
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
-        run: |
-          sudo add-apt-repository ppa:haxe/releases -y
-          sudo apt-get update
-          sudo apt-get install -y haxe libvlc-dev libvlccore-dev
-          haxe --version
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
 
       - name: Setup haxelib local
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
         run: haxelib newrepo
 
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvlc-dev libvlccore-dev
+
       - name: Install Libraries
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
+        if: steps.cache-haxelib.outputs.cache-hit != 'true'
         run: |
           chmod +x ./setup/unish-lib.sh
           ./setup/unish-lib.sh
-
-      - name: Upload Cache
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
-        with:
-          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v1
-          enableCrossOsArchive: true
-          path: |
-            .haxelib/
-
-      - name: Checkout (if cache was restored)
-        if: steps.load-lib-cache.outputs.cache-hit == 'true'
-        uses: actions/checkout@v5
-
-      - name: Restore haxelib from cache
-        if: steps.load-lib-cache.outputs.cache-hit == 'true'
-        run: haxelib newrepo
 
       - name: Build
         run: haxelib run lime build Project.xml linux -DofficialBuild
@@ -134,46 +118,49 @@ jobs:
     if: needs.check_platforms.outputs.build_android == 'true'
 
     steps:
-      - name: Restore Libraries Cache
-        id: load-lib-cache
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        id: cache-haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v1
+          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v2
           enableCrossOsArchive: true
           path: |
             .haxelib/
+            ~/.cache/lime
           restore-keys: |
             haxe-libs-
 
-      - name: Checkout
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v5
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          key: gradle-${{ hashFiles('**/*.gradle*') }}-v1
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          restore-keys: |
+            gradle-
 
       - name: Setup Haxe
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
-        run: |
-          sudo add-apt-repository ppa:haxe/releases -y
-          sudo apt-get update
-          sudo apt-get install -y haxe
-          haxe --version
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
 
       - name: Setup haxelib local
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
         run: haxelib newrepo
 
       - name: Setup Java
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
         uses: actions/setup-java@v5
         with:
           distribution: zulu
           java-version: "21"
 
       - name: Setup Android SDK
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
         uses: android-actions/setup-android@v4
 
       - name: Install Android packages
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
         run: |
           sdkmanager --sdk_root="$ANDROID_SDK_ROOT" \
             "platform-tools" \
@@ -187,27 +174,10 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Install Libraries
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
+        if: steps.cache-haxelib.outputs.cache-hit != 'true'
         run: |
           chmod +x ./setup/unish-lib.sh
           ./setup/unish-lib.sh
-
-      - name: Upload Cache
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
-        with:
-          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v1
-          enableCrossOsArchive: true
-          path: |
-            .haxelib/
-
-      - name: Checkout (if cache was restored)
-        if: steps.load-lib-cache.outputs.cache-hit == 'true'
-        uses: actions/checkout@v5
-
-      - name: Restore haxelib from cache
-        if: steps.load-lib-cache.outputs.cache-hit == 'true'
-        run: haxelib newrepo
 
       - name: Configure Lime
         run: |
@@ -240,52 +210,32 @@ jobs:
     if: needs.check_platforms.outputs.build_windows == 'true'
 
     steps:
-      - name: Restore Libraries Cache
-        id: load-lib-cache
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        id: cache-haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v1
+          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v2
           enableCrossOsArchive: true
           path: |
             .haxelib/
           restore-keys: |
             haxe-libs-
 
-      - name: Checkout
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v5
-
       - name: Setup Haxe
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
         uses: krdlab/setup-haxe@master
         with:
-          haxe-version: 4.3.7
+          haxe-version: ${{ env.HAXE_VERSION }}
 
       - name: Setup haxelib local
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
         run: haxelib newrepo
 
       - name: Install Libraries
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
+        if: steps.cache-haxelib.outputs.cache-hit != 'true'
         run: |
           cmd /c setup\windows-lib.bat
-
-      - name: Upload Cache
-        if: steps.load-lib-cache.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
-        with:
-          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v1
-          enableCrossOsArchive: true
-          path: |
-            .haxelib/
-
-      - name: Checkout (if cache was restored)
-        if: steps.load-lib-cache.outputs.cache-hit == 'true'
-        uses: actions/checkout@v5
-
-      - name: Restore haxelib from cache
-        if: steps.load-lib-cache.outputs.cache-hit == 'true'
-        run: haxelib newrepo
 
       - name: Build
         run: haxelib run lime build Project.xml windows -DofficialBuild

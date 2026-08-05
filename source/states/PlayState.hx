@@ -5846,136 +5846,195 @@ class PlayState extends MusicBeatState
 		grpNoteSplashes.add(splash);
 	}
 
-	override function destroy() {
-		// Limpiar todos los videos de Lua
-		#if LUA_ALLOWED
-		psychlua.LuaVideo.clearAll();
+override function destroy()
+{
+	#if LUA_ALLOWED
+	psychlua.LuaVideo.clearAll();
+	#end
+	
+	if (windowResizedByScript)
+	{
+		#if windows
+		var window = openfl.Lib.application.window;
+		FlxG.resizeWindow(1280, 720);
+		window.y = Math.floor((openfl.system.Capabilities.screenResolutionY / 2) - (720 / 2));
+		window.x = Math.floor((openfl.system.Capabilities.screenResolutionX / 2) - (1280 / 2));
+		FlxG.scaleMode = new flixel.system.scaleModes.RatioScaleMode();
 		#end
-		
-		// Restaurar el estado original de la ventana al salir de PlayState
-		if (windowResizedByScript) {
-			#if windows
-			// Restaurar manualmente la ventana a 1280x720 centrada
-			var window = openfl.Lib.application.window;
-			FlxG.resizeWindow(1280, 720);
-			window.y = Math.floor((openfl.system.Capabilities.screenResolutionY / 2) - (720 / 2));
-			window.x = Math.floor((openfl.system.Capabilities.screenResolutionX / 2) - (1280 / 2));
-			
-			FlxG.scaleMode = new flixel.system.scaleModes.RatioScaleMode();
-			#end
-		}
+	}
 
-		if (psychlua.CustomSubstate.instance != null)
+	if (psychlua.CustomSubstate.instance != null)
+	{
+		closeSubState();
+		resetSubState();
+	}
+
+	if (endCountdownText != null)
+	{
+		remove(endCountdownText);
+		endCountdownText.destroy();
+		endCountdownText = null;
+	}
+	
+	if (breakTimerHud != null)
+	{
+		breakTimerHud.destroyFrom(this);
+		breakTimerHud = null;
+	}
+	
+	if (stepmaniaHud != null)
+	{
+		stepmaniaHud.destroyFrom(this, uiGroup);
+		stepmaniaHud = null;
+	}
+	
+	destroyGameplayRuntimeBridge();
+	
+	#if MODCHARTS_NOTITG_ALLOWED
+	if (modchartInitCallback != null)
+	{
+		FlxG.signals.postUpdate.remove(modchartInitCallback);
+		modchartInitCallback = null;
+	}
+	destroyModchartDebugOverlay();
+	#end
+	
+	for (i in 0...botplayKeyReleaseTimers.length)
+	{
+		if (botplayKeyReleaseTimers[i] != null)
 		{
-			closeSubState();
-			resetSubState();
+			botplayKeyReleaseTimers[i].cancel();
+			botplayKeyReleaseTimers[i] = null;
 		}
+	}
 
-		if (endCountdownText != null) {
-			remove(endCountdownText);
-			endCountdownText.destroy();
-			endCountdownText = null;
-		}
-		if (breakTimerHud != null) {
-			breakTimerHud.destroyFrom(this);
-			breakTimerHud = null;
-		}
-		if (stepmaniaHud != null) {
-			stepmaniaHud.destroyFrom(this, uiGroup);
-			stepmaniaHud = null;
-		}
-		destroyGameplayRuntimeBridge();
-		#if MODCHARTS_NOTITG_ALLOWED
-		if (modchartInitCallback != null)
+	#if LUA_ALLOWED
+	var luaScripts = luaArray != null ? luaArray.copy() : [];
+	for (lua in luaScripts)
+	{
+		if (lua != null)
 		{
-			FlxG.signals.postUpdate.remove(modchartInitCallback);
-			modchartInitCallback = null;
+			if (!lua.closed)
+				lua.call('onDestroy', []);
+			lua.stop();
 		}
-		destroyModchartDebugOverlay();
-		#end
-		for (i in 0...botplayKeyReleaseTimers.length)
+	}
+	luaArray = [];
+	FunkinLua.customFunctions.clear();
+	#end
+
+	#if HSCRIPT_ALLOWED
+	var hscriptScripts = hscriptArray != null ? hscriptArray.copy() : [];
+	for (script in hscriptScripts)
+	{
+		if (script != null)
 		{
-			if (botplayKeyReleaseTimers[i] != null)
-			{
-				botplayKeyReleaseTimers[i].cancel();
-				botplayKeyReleaseTimers[i] = null;
-			}
+			if (script.exists('onDestroy'))
+				script.call('onDestroy');
+			script.destroy();
 		}
+	}
+	hscriptArray = [];
+	#end
+	
+	stagesFunc(function(stage:BaseStage) stage.destroy());
 
-		#if LUA_ALLOWED
-		var luaScripts = luaArray != null ? luaArray.copy() : [];
-		for (lua in luaScripts)
-		{
-			if (lua != null)
-			{
-				if (!lua.closed)
-					lua.call('onDestroy', []);
-				lua.stop();
-			}
-		}
-		luaArray = [];
-		FunkinLua.customFunctions.clear();
-		#end
+	#if VIDEOS_ALLOWED
+	if (videoCutscene != null)
+	{
+		videoCutscene.destroy();
+		videoCutscene = null;
+	}
+	#end
 
-		#if HSCRIPT_ALLOWED
-		// Destroy all HScript arrays
-		var hscriptScripts = hscriptArray != null ? hscriptArray.copy() : [];
-		for (script in hscriptScripts)
-			if(script != null)
-			{
-				if(script.exists('onDestroy')) script.call('onDestroy');
-				script.destroy();
-			}
-		hscriptArray = [];
-		#end
-		stagesFunc(function(stage:BaseStage) stage.destroy());
+	FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyPress);
+	FlxG.stage.removeEventListener(KeyboardEvent.KEY_UP, onKeyRelease);
 
-		#if VIDEOS_ALLOWED
-		if(videoCutscene != null)
-		{
-			videoCutscene.destroy();
-			videoCutscene = null;
-		}
-		#end
+	FlxG.camera.setFilters([]);
 
-		FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyPress);
-		FlxG.stage.removeEventListener(KeyboardEvent.KEY_UP, onKeyRelease);
+	#if FLX_PITCH
+	FlxG.sound.music.pitch = 1;
+	#end
+	
+	FlxG.animationTimeScale = 1;
 
-		FlxG.camera.setFilters([]);
+	Note.globalRgbShaders = [];
+	backend.NoteTypesConfig.clearNoteTypesData();
 
-		#if FLX_PITCH FlxG.sound.music.pitch = 1; #end
-		FlxG.animationTimeScale = 1;
+	NoteSplash.configs.clear();
+	NoteSplash.clearCache();
+	
+	#if MODCHARTS_NOTITG_ALLOWED
+	if (modchart.Manager.instance != null)
+	{
+		var manager = modchart.Manager.instance;
+		remove(manager, true);
+		manager.destroy();
+		modchart.Manager.instance = null;
+	}
+	#end
 
-		Note.globalRgbShaders = [];
-		backend.NoteTypesConfig.clearNoteTypesData();
-
-		NoteSplash.configs.clear();
-		NoteSplash.clearCache();
-		
-		// Limpiar Manager de modchart
-		#if MODCHARTS_NOTITG_ALLOWED
-		if (modchart.Manager.instance != null) {
-			var manager = modchart.Manager.instance;
-			remove(manager, true);
-			manager.destroy();
-			modchart.Manager.instance = null;
-		}
-		#end
-
-		if (Main.fpsVar != null) {
-			Main.fpsVar.modAuthor = "";
-			// Resetear estadísticas de scripts
-			Main.fpsVar.luaScriptsLoaded = 0;
-			Main.fpsVar.luaScriptsFailed = 0;
-			Main.fpsVar.hscriptsLoaded = 0;
-			Main.fpsVar.hscriptsFailed = 0;
-		}
-		
-	// Limpiar botón de pausa
-	if (pauseButton != null) {
+	if (Main.fpsVar != null)
+	{
+		Main.fpsVar.modAuthor = "";
+		Main.fpsVar.luaScriptsLoaded = 0;
+		Main.fpsVar.luaScriptsFailed = 0;
+		Main.fpsVar.hscriptsLoaded = 0;
+		Main.fpsVar.hscriptsFailed = 0;
+	}
+	
+	if (pauseButton != null)
+	{
 		remove(pauseButton);
 		pauseButton.destroy();
 		pauseButton = null;
+	}
+	
+	if (uiGroup != null)
+	{
+		uiGroup.forEachAlive(function(sprite) sprite.destroy());
+		uiGroup.clear();
+		uiGroup = null;
+	}
+	
+	if (noteGroup != null)
+	{
+		noteGroup.forEachAlive(function(sprite) sprite.destroy());
+		noteGroup.clear();
+		noteGroup = null;
+	}
+	
+	if (notes != null)
+		notes = [];
+	
+	if (strumLineNotes != null)
+		strumLineNotes = [];
+	
+	if (eventNotes != null)
+		eventNotes = [];
+	
+	if (boyfriend != null)
+	{
+		boyfriend.destroy();
+		boyfriend = null;
+	}
+	
+	if (dad != null)
+	{
+		dad.destroy();
+		dad = null;
+	}
+	
+	if (gf != null)
+	{
+		gf.destroy();
+		gf = null;
+	}
+	
+	if (stage != null)
+	{
+		stage.destroy();
+		stage = null;
 	}
 	
 	instance = null;
@@ -5983,93 +6042,89 @@ class PlayState extends MusicBeatState
 	FlxG.signals.preUpdate.remove(checkForResync);
 	
 	super.destroy();
-	
-}	var lastStepHit:Int = -1;
-	override function stepHit()
-	{
-		super.stepHit();
+}
+		
+var lastStepHit:Int = -1;
+var lastBeatHit:Int = -1;
 
-		if(curStep == lastStepHit) {
-			return;
-		}
+override function stepHit()
+{
+	super.stepHit();
+
+	if (curStep == lastStepHit)
+		return;
 
 	lastStepHit = curStep;
 	setOnScripts('curStep', curStep);
 	callOnScripts('onStepHit');
-}	var lastBeatHit:Int = -1;
+}
 
-	override function beatHit()
+override function beatHit()
+{
+	if (lastBeatHit >= curBeat)
+		return;
+
+	if (generatedMusic)
+		notes.sort(FlxSort.byY, ClientPrefs.data.downScroll ? FlxSort.ASCENDING : FlxSort.DESCENDING);
+
+	if (ClientPrefs.data.iconBounceType == 'Default')
 	{
-		if(lastBeatHit >= curBeat) {
-			//trace('BEAT HIT: ' + curBeat + ', LAST HIT: ' + lastBeatHit);
-			return;
-		}
+		iconP1.scale.set(1.2, 1.2);
+		iconP2.scale.set(1.2, 1.2);
+		iconGF.scale.set(1.2, 1.2);
 
-		if (generatedMusic)
-			notes.sort(FlxSort.byY, ClientPrefs.data.downScroll ? FlxSort.ASCENDING : FlxSort.DESCENDING);
-
-		if (ClientPrefs.data.iconBounceType == 'Default')
-		{
-			iconP1.scale.set(1.2, 1.2);
-			iconP2.scale.set(1.2, 1.2);
-			iconGF.scale.set(1.2, 1.2);
-
-			iconP1.updateHitbox();
-			iconP2.updateHitbox();
-			iconGF.updateHitbox();
-		}
-
-		if (ClientPrefs.data.iconBounceType == 'NF')
-		{
-			// Taken from NovaFlare Engine
-			iconP1.scale.set(1.3, 1.3);
-			iconP2.scale.set(1.3, 1.3);
-			iconGF.scale.set(1.3, 1.3);
-
-			iconP1.updateHitbox();
-			iconP2.updateHitbox();
-			iconGF.updateHitbox();
-		}
-
-		// Taken from Psych Engine 0.4.2
-		if (ClientPrefs.data.iconBounceType == 'Old')
-		{
-			iconP1.setGraphicSize(Std.int(iconP1.width + 30));
-			iconP2.setGraphicSize(Std.int(iconP2.width + 30));
-			iconGF.setGraphicSize(Std.int(iconP2.width + 30));
-
-			iconP1.updateHitbox();
-			iconP2.updateHitbox();
-			iconGF.updateHitbox();
-		}
-
-		if (ClientPrefs.data.iconBounceType == 'D&B')
-		{
-			animateIcons(); // Taken from older of Plus Engine
-		}
-
-		characterBopper(curBeat);
-
-		doTimeBump();
-		doVerBump();
-		
-		// Animar flechas NotITG en el beat
-		animateNotITGArrows();
-
-		super.beatHit();
-
-		if (cameraBopEnabled && Std.int(curBeat) % Std.int(cameraBopFrequency) == 0)
-		{
-			FlxG.camera.zoom += 0.015 * cameraBopIntensity;
-			camHUD.zoom += 0.03 * cameraBopIntensity;
-		}
-
-		lastBeatHit = curBeat;
-
-		setOnScripts('curBeat', curBeat);
-		callOnScripts('onBeatHit');
+		iconP1.updateHitbox();
+		iconP2.updateHitbox();
+		iconGF.updateHitbox();
 	}
 
+	if (ClientPrefs.data.iconBounceType == 'NF')
+	{
+		iconP1.scale.set(1.3, 1.3);
+		iconP2.scale.set(1.3, 1.3);
+		iconGF.scale.set(1.3, 1.3);
+
+		iconP1.updateHitbox();
+		iconP2.updateHitbox();
+		iconGF.updateHitbox();
+	}
+
+	if (ClientPrefs.data.iconBounceType == 'Old')
+	{
+		iconP1.setGraphicSize(Std.int(iconP1.width + 30));
+		iconP2.setGraphicSize(Std.int(iconP2.width + 30));
+		iconGF.setGraphicSize(Std.int(iconP2.width + 30));
+
+		iconP1.updateHitbox();
+		iconP2.updateHitbox();
+		iconGF.updateHitbox();
+	}
+
+	if (ClientPrefs.data.iconBounceType == 'D&B')
+	{
+		animateIcons();
+	}
+
+	characterBopper(curBeat);
+
+	doTimeBump();
+	doVerBump();
+	
+	animateNotITGArrows();
+
+	super.beatHit();
+
+	if (cameraBopEnabled && Std.int(curBeat) % Std.int(cameraBopFrequency) == 0)
+	{
+		FlxG.camera.zoom += 0.015 * cameraBopIntensity;
+		camHUD.zoom += 0.03 * cameraBopIntensity;
+	}
+
+	lastBeatHit = curBeat;
+
+	setOnScripts('curBeat', curBeat);
+	callOnScripts('onBeatHit');
+}
 	public function characterBopper(beat:Int):Void
 	{
 		if (gf != null && beat % Math.round(gfSpeed * gf.danceEveryNumBeats) == 0 && !gf.getAnimationName().startsWith('sing') && !gf.stunned)

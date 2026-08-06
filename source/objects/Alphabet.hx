@@ -280,7 +280,7 @@ class Alphabet extends FlxSpriteGroup
 					}
 					consecutiveSpaces = 0;
 
-					var txt:FlxText = new FlxText(xPos, 0, 0, character, 40);
+					var txt:FlxText = new FlxText(xPos, 0, 0, character, 80);
 					txt.setFormat(Paths.font('vcr_ru.ttf'), 40, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 					txt.borderSize = 2;
 					txt.scale.set(scaleX, scaleY);

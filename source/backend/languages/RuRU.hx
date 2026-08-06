@@ -6,7 +6,7 @@ class RuRU
     public static var languageCode:String = "ru-RU";
     
     public static var translations:Map<String, String> = [
-        // ===== ОСНОВНОЕ / ОБЩЕЕ =====
+        // ==================== ОСНОВНОЕ / ОБЩЕЕ ====================
         "language_name" => "Русский (Россия)",
         "update_available_title" => "Доступно обновление!",
         "version_comparison" => "Текущая версия: {1} => Новая версия: {2}",
@@ -17,7 +17,7 @@ class RuRU
         "changelog_error" => "Ошибка загрузки списка изменений: {1}",
         "back" => "Назад",
 
-        // ===== ГЕЙМПЛЕЙ =====
+        // ==================== ГЕЙМПЛЕЙ ====================
         "score_text" => "Счёт: {1} | Промахи: {2} | Рейтинг: {3}",
         "score_text_instakill" => "Счёт: {1} | Рейтинг: {2}",
         "score_text_new" => "Счёт: {1} | {2}: {3} | Рейтинг: {4} | TPS: {5}/{6}",
@@ -33,7 +33,7 @@ class RuRU
         "misses" => "Промахи",
         "combo_breaks" => "Сбросы комбо",
 
-        // ===== ОЦЕНКИ =====
+        // ==================== ОЦЕНКИ ====================
         "rating_terrible" => "Ужасно",
         "rating_you_suck" => "Ты отстой!",
         "rating_shit" => "Дерьмо",
@@ -50,10 +50,10 @@ class RuRU
         "rating_legendary" => "★ ЛЕГЕНДАРНО ★",
         "rating_clear" => "Чисто",
 
-        // ===== ДИАЛОГИ =====
+        // ==================== ДИАЛОГИ ====================
         "dialogue_skip" => "Нажми НАЗАД для пропуска",
 
-        // ===== МЕНЮ ПАУЗЫ =====
+        // ==================== МЕНЮ ПАУЗЫ ====================
         "pause_resume" => "Продолжить",
         "pause_restart_song" => "Рестарт песни",
         "pause_leave_charting_mode" => "Выйти из редактора уровня",
@@ -69,7 +69,7 @@ class RuRU
         "charting_mode" => "Редактор уровня",
         "blueballed" => "Синие яйца: {1}",
 
-        // ===== РЕЖИМ ИСТОРИИ =====
+        // ==================== РЕЖИМ ИСТОРИИ ====================
         "week_score" => "СЧЁТ НЕДЕЛИ: {1}",
         "storyname_tutorial" => "Обучение",
         "storyname_week1" => "Папочка Дорогуша",
@@ -81,7 +81,7 @@ class RuRU
         "storyname_week7" => "Танкист",
         "storyname_weekend1" => "Просроченные Долги",
 
-        // ===== ФРИПЛЕЙ =====
+        // ==================== ФРИПЛЕЙ ====================
         "freeplay_search" => "Поиск...",
         "personal_best" => "ЛИЧНЫЙ РЕКОРД: {1} ({2}%)",
         "new_personal_best" => "Счёт: {1}\nТочность: {2}% ({3})",
@@ -94,7 +94,7 @@ class RuRU
         "no_score" => "Пока нет счёта",
         "new_no_score" => "Пока нет счёта",
 
-        // ===== МЕНЮ МОДОВ =====
+        // ==================== МЕНЮ МОДОВ ====================
         "no_mods_installed" => "НЕТ УСТАНОВЛЕННЫХ МОДОВ\nНАЖМИ НАЗАД ИЛИ УСТАНОВИ МОД",
         "no_mods_found" => "Моды не найдены.",
         "mod_restart" => "* Перемещение или переключение этого мода перезапустит игру.",
@@ -103,18 +103,18 @@ class RuRU
         "disable_all_button" => "ВЫКЛЮЧИТЬ ВСЁ",
         "mods_leave" => "Нажми {1}, чтобы выйти",
 
-        // ===== ТИТРЫ =====
+        // ==================== ТИТРЫ ====================
         "credits_title" => "НАД ИГРОЙ РАБОТАЛИ",
         "link_hint" => "A/ENTER — открыть ссылку | B/ESC — назад",
         "description_shadow_mario" => "Команда Psych Engine",
 
-        // ===== СБРОС СЧЁТА/ДОСТИЖЕНИЙ =====
+        // ==================== СБРОС СЧЁТА/ДОСТИЖЕНИЙ ====================
         "reset_score" => "Сбросить счёт",
         "reset_achievement" => "Сбросить достижение:",
         "yes" => "Да",
         "no" => "Нет",
 
-        // ===== ДОСТИЖЕНИЯ =====
+        // ==================== ДОСТИЖЕНИЯ ====================
         "achievement_friday_night_play" => "Странности в пятницу вечером",
         "description_friday_night_play" => "Сыграй в пятницу... вечером.",
         "achievement_week1_nomiss" => "Меня тоже зовут Папочкой",
@@ -150,7 +150,7 @@ class RuRU
         "achievement_pessy_easter_egg" => "Подружка Движка",
         "description_pessy_easter_egg" => "Хе-хе, ты меня нашёл~!",
 
-        // ===== НАСТРОЙКИ (ПУНКТЫ МЕНЮ) =====
+        // ==================== НАСТРОЙКИ (ПУНКТЫ МЕНЮ) ====================
         "options_note_colors" => "Цвета нот",
         "options_controls" => "Управление",
         "options_adjust_delay_and_combo" => "Задержка и Комбо",
@@ -160,9 +160,6 @@ class RuRU
         "options_modchart" => "Модчарт",
         "options_language" => "Язык",
         "options_mobile" => "Мобильные",
-        "options_legacy" => "Старые настройки",
-
-        // ===== ANDROID TOOLS =====
         "android_tools_title" => "ИНСТРУМЕНТЫ ANDROID",
         "android_tools_subtitle" => "Здесь можно запросить разрешения или перезагрузить шрифты без борьбы с системой.",
         "android_tools_request" => "ЗАПРОСИТЬ РАЗРЕШЕНИЯ",
@@ -170,8 +167,6 @@ class RuRU
         "android_tools_reload_popup" => "Шрифты успешно перезагружены. Если кэш глючил, теперь всё свежее.",
         "android_tools_popup_title" => "Инструменты Android",
         "android_tools_storage_mode" => "Режим хранилища",
-
-        // ===== ЗАГОЛОВКИ МЕНЮ НАСТРОЕК =====
         "graphics_menu" => "Настройки графики",
         "visuals_menu" => "Настройки визуала",
         "gameplay_menu" => "Настройки геймплея",
@@ -181,148 +176,125 @@ class RuRU
         "mobile_menu" => "Мобильные настройки",
         "mobile_controls_tip" => "Нажми {1}, чтобы перейти в меню мобильного управления",
 
-        // ===== ОПИСАНИЯ НАСТРОЕК =====
-
-        // --- Графика (GraphicsSettingsSubState) ---
+        // ==================== ОПИСАНИЯ НАСТРОЕК ====================
+        // Graphics
         "description_low_quality" => "Если включено, убирает часть фоновых деталей,\nуменьшает время загрузки и повышает производительность.",
-        "description_antialiasing" => "Если выключено, отключает сглаживание, повышая\nпроизводительность ценой более резкой картинки.",
+        "description_anti-aliasing" => "Если выключено, отключает сглаживание, повышая\nпроизводительность ценой более резкой картинки.",
         "description_shaders" => "Если выключено, отключает шейдеры.\nИспользуются для визуальных эффектов, нагружают слабые ПК.",
-        "description_colorblindMode" => "Выбери режим коррекции цветов для людей с дальтонизмом.",
-        "description_cacheOnGPU" => "Если включено, задействует GPU для кэширования текстур, снижая использование ОЗУ.\nНе включай, если видеокарта — тыква.",
-        "description_fpsCounterMode" => "Выбери, сколько информации о производительности показывать в левом верхнем углу.",
+        "description_color_accessibility" => "Выберите опцию в соответствии с вашим нарушением цветовосприятия.",
+        "description_gpu_caching" => "Если включено, задействует GPU для кэширования текстур, снижая использование ОЗУ.\nНе включай, если видеокарта — тыква.",
+        "description_fps_counter_mode" => "Выбери, сколько информации о производительности показывать в левом верхнем углу.",
+        "description_framerate" => "Тут и так всё понятно, да?\nПерезапусти игру для применения изменений.",
+        "description_framerate_mode" => "Выбери, как движок обрабатывает тайминги обновления/отрисовки.\nBase — как в Psych Engine, Fixed — легче, Interpolated — плавнее.\nПерезапусти игру для применения.",
+        "description_fps_rework" => "Если включено, игра не будет \"замедляться\" и \"сглаживаться\", когда текущий FPS ниже капа.",
         "description_vsync" => "Если включено, убирает разрывы экрана ценой ограничения FPS до частоты монитора.\n(Требуется перезапуск игры)",
-        "description_framerateMode" => "Выбери, как движок обрабатывает тайминги обновления/отрисовки.\nBase как в Psych Engine, Fixed легче, Interpolated плавнее.\nПерезапусти игру для применения.",
-        "description_framerate" => "Тут и так всё понятно, да?\nПерезапусти игру для применения.",
-        "description_fullscreenMode" => "Borderless ограничен 1080p для лучшей производительности шейдеров. Borderless Fix использует родное разрешение монитора.",
+        "description_fullscreen_mode" => "Borderless ограничен 1080p для лучшей производительности шейдеров. Borderless Fix использует родное разрешение монитора.",
 
-        // --- Визуал (VisualsSettingsSubState) ---
-        "description_noteSkins" => "Выбери предпочитаемый скин для нот.",
-        "description_noteSplashes" => "Выбери вариант всплесков или отключи их.",
-        "description_splashAlpha" => "Насколько прозрачными должны быть всплески нот.",
-        "description_hideHud" => "Если включено, прячет большинство элементов интерфейса.",
-        "description_hideSustainSplash" => "Если включено, скрывает всплески удержаний нот.",
-        "description_showKeyViewer" => "Если включено, показывает нажатия клавиш на экране.",
-        "description_keyViewerColor" => "Выбери цвет для отображения нажатых клавиш.",
-        "description_menuAccentColor" => "Выбери предустановленный цвет акцента или открой палитру.",
-        "description_timeBarType" => "Что должен показывать тайм-бар?",
-        "description_shadedTimeBar" => "Если включено, тайм-бар закрашивается в цвет иконки персонажа.",
-        "description_flashing" => "Отключи, если ты чувствителен к мигающему свету!",
-        "description_camZooms" => "Если выключено, камера не будет приближаться на битах.",
-        "description_scoreZoom" => "Если выключено, текст счёта не будет увеличиваться при попадании.",
-        "description_iconBounceType" => "Меняет способ анимации иконок здоровья.",
-        "description_timeBump" => "Если выключено, отключает анимацию увеличения текста времени на битах.",
-        "description_versionTextOnGameplay" => "Если включено, показывает версию игры во время геймплея.",
-        "description_abbreviateScore" => "Если включено, счёт сокращается (напр. 10,00К, 1,00М).",
-        "description_dynamicComboDigits" => "Если включено, комбо показывается двумя цифрами,\nи только после 100 становится трёхзначным.",
-        "description_nfRatingStyle" => "Если включено, оценки и комбо пульсируют на месте вместо вылетания/затухания.",
-        "description_healthBarAlpha" => "Насколько прозрачной должна быть полоса здоровья с иконками.",
-        "description_smoothHealthBar" => "Если включено, полоса здоровья двигается плавно, а не мгновенно.",
-        "description_smoothHPBug" => "Если включено, здоровье может выходить за пределы полосы, и иконки могут двигаться за края.",
-        "description_showWatermark" => "Если включено, показывает водяной знак на экране.",
-        "description_pauseMusic" => "Какая песня тебе больше нравится на экране паузы?",
-        "description_checkForUpdates" => "В релизных сборках — проверять обновления при запуске игры.",
-        "description_discordRPC" => "Отключи, чтобы никто не спалил, во что ты играешь. Убирает игру из статуса Discord.",
-        "description_comboStacking" => "Если выключено, оценки и комбо не накладываются, экономя память и улучшая читаемость.",
-        "description_showRating" => "Если выключено, скрывает всплывающие оценки при попадании по нотам.",
-        "description_showCombo" => "Если выключено, скрывает всплывающие надписи COMBO при попадании по нотам.",
-        "description_showComboNum" => "Если выключено, скрывает всплывающие цифры комбо при попадании по нотам.",
-        "description_comboInGame" => "Если включено, комбо и оценки рендерятся в слое camGame, а не camHUD.",
-        "description_judgementCounter" => "Показывает счётчик оценок во время игры.",
-        "description_showEndCountdown" => "Если включено, показывает обратный отсчёт в последние секунды песни.",
-        "description_endCountdownSeconds" => "Сколько секунд до конца песни появляется отсчёт (10-30).",
-        "description_pauseCountdown" => "Если включено, при возобновлении игры после паузы проигрывается отсчёт, как в начале.",
-        "description_heyIntro" => "Если включено, BF и GF автоматически делают анимацию Hey! при старте песни.",
-        "description_breakTimer" => "Если включено, появляется таймер, когда следующие ноты ещё далеко.",
-        "description_changeWindowBorderColorWithNoteHit" => "Может менять цвет рамки окна при попадании по нотам.\n(Только для Windows 11, сорян)",
+        // Visuals
+        "description_note_skins" => "Выбери предпочитаемый скин для нот.",
+        "description_note_splashes" => "Выбери вариант всплесков или отключи их.",
+        "description_note_splash_opacity" => "Насколько прозрачными должны быть всплески нот.",
+        "description_hide_hud" => "Если включено, прячет большинство элементов интерфейса.",
+        "description_hide_sustain_splash" => "Если включено, скрывает всплеск при удержании нот.",
+        "description_time_bar" => "Что должен показывать тайм-бар?",
+        "description_gradient_time_bar" => "Если включено, шкала времени будет затеняться в соответствии с цветом иконки персонажа.",
+        "description_flashing_lights" => "Отключи, если ты чувствителен к мигающему свету!",
+        "description_show_key_viewer" => "Если включено, показывает нажатия клавиш на экране.",
+        "description_key_viewer_color" => "Выбери цвет для отображения нажатых клавиш.",
+        "description_theme_mode" => "Выбери светлую или тёмную тему меню.",
+        "description_accent_color" => "Выбери предустановленный цвет или открой палитру.",
+        "description_camera_zooms" => "Если выключено, камера не будет приближаться на битах.",
+        "description_score_text_grow_on_hit" => "Если выключено, текст счёта не будет\nувеличиваться при попадании.",
+        "description_icon_bounce_type" => "Меняет способ отскока иконок здоровья.",
+        "description_time_text_bump" => "Если выключено, отключает анимацию подпрыгивания текста времени на бите.",
+        "description_show_version_text_on_gameplay" => "Если включено, показывает текст версии во время игры.",
+        "description_abbreviate_score" => "Если включено, счёт сокращается (напр. 10,00К, 1,00М).",
+        "description_dynamic_combo_digits" => "Если включено, комбо показывается двумя цифрами,\nи только после 100 становится трёхзначным.",
+        "description_nf_rating_style" => "Если включено, рейтинги и цифры комбо пульсируют на месте вместо того, чтобы летать/исчезать.",
+        "description_health_bar_opacity" => "Насколько прозрачной должна быть полоса здоровья с иконками.",
+        "description_smooth_health_bar" => "Если включено, полоса здоровья двигается плавно вместо мгновенного изменения.",
+        "description_health_bar_overflow" => "Если включено, здоровье может превышать лимит шкалы, а иконки могут выходить за края.",
+        "description_show_watermark" => "Если включено, показывает водяной знак на экране.",
+        "description_pause_music" => "Какая песня тебе больше нравится на экране паузы?",
+        "description_check_for_updates" => "В релизных сборках — проверять обновления при запуске игры.",
+        "description_discord_rich_presence" => "Отключи, чтобы никто не спалил, во что ты играешь. Убирает игру из статуса Discord.",
+        "description_combo_stacking" => "Если выключено, оценки и комбо не накладываются, экономя память и улучшая читаемость.",
+        "description_show_rating_sprite" => "Если выключено, скрывает всплывающее изображение рейтинга при попадании.",
+        "description_show_combo_sprite" => "Если выключено, скрывает всплывающее изображение COMBO при попадании.",
+        "description_show_combo_numbers" => "Если выключено, скрывает всплывающие цифры комбо при попадании.",
+        "description_combo_and_rating_in_camgame" => "Если включено, комбо и оценка рендерятся в слое camGame, а не camHUD.",
+        "description_judgement_counter" => "Если включено, показывает счётчик оценок в игре.",
+        "description_show_end_countdown" => "Если включено, показывает отсчёт в конце песни.",
+        "description_end_countdown_seconds" => "Сколько секунд длится отсчёт в конце песни.\n(10 - 30)",
+        "description_pause_countdown" => "Если включено, при возобновлении с паузы проигрывается отсчёт, похожий на вступительный.",
+        "description_hey_intro" => "Если включено, BF и GF автоматически делают анимацию Hey!, когда отсчёт говорит Go!",
+        "description_break_timer" => "Если включено, появляется таймер, когда следующие ноты ещё далеко.",
+        "description_change_window_border_color_with_note_hit" => "Может менять цвет границы окна при попадании по ноте.\n(Только для Windows 11, сорян)",
+        "description_use_note_rgb" => "Если включено, ноты используют цвета RGB-палитры. Если выключено, используются HSL-смещения.",
 
-        // --- Геймплей (GameplaySettingsSubState) ---
-        "description_downScroll" => "Если включено, ноты идут вниз вместо верха. Легко и просто.",
-        "description_middleScroll" => "Если включено, твои ноты выравниваются по центру.",
-        "description_opponentStrums" => "Если выключено, ноты противника скрываются.",
-        "description_ghostTapping" => "Если включено, ты не получишь промахи за нажатия,\nкогда нет доступных для попадания нот.",
-        "description_badShitBreakCombo" => "Если включено, попадание в Bad или Shit сбрасывает комбо\nи считается сбросом комбо, а не просто промахом.",
-        "description_autoPause" => "Если включено, игра ставится на паузу при потере фокуса окна.",
-        "description_popUpRating" => "Если включено, показывает всплывающие подсказки комбо и оценок при попадании.",
-        "description_noReset" => "Если включено, нажатие Reset ничего не делает.",
-        "description_guitarHeroSustains" => "Если включено, удержания нельзя нажать при промахе,\nи они считаются за одно попадание/промах.\nОтключи для старой системы ввода.",
-        "description_hitsoundType" => "Выбери, как воспроизводить звук: при нажатии клавиш или при попадании по нотам.",
-        "description_hitsoundVolume" => "Забавные ноты издают \"Тык!\", когда по ним попадаешь.",
-        "description_hitSounds" => "Выбери звук, который воспроизводится при попадании по нотам.",
-        "description_ratingOffset" => "Меняет, насколько поздно/рано нужно попасть для \"Шикарно!\"\nВыше значение — позже попадание.",
-        "description_flawlessWindow" => "Меняет время в миллисекундах для попадания в \"Безупречно!!\".",
-        "description_sickWindow" => "Меняет время в миллисекундах для попадания в \"Шикарно!\".",
-        "description_goodWindow" => "Меняет время в миллисекундах для попадания в \"Хорошо\".",
-        "description_badWindow" => "Меняет время в миллисекундах для попадания в \"Плохо\".",
-        "description_safeFrames" => "Меняет количество фреймов, на которые можно опоздать или опередить ноту.",
-        "description_accuracySystem" => "Выбери систему расчёта точности:\nWife3 — точность как в StepMania\nPsych — на основе модов рейтинга\nSimple — простые попадания/всего\nosu!mania — взвешенная система оценок\nDJMAX — бонусная система комбо\nITG — система танцевальных очков",
-        "description_systemScoreMultiplier" => "Выбери систему подсчёта очков за попадания по нотам.",
-        "description_gameOverVibration" => "Если включено, устройство вибрирует при проигрыше.",
-        "description_windowsGDIEffects" => "Разрешает эффекты Windows Desktop GDI. Держи отключённым,\nесли только моды не требуют этого.",
+        // Gameplay
+        "description_downscroll" => "Если включено, ноты идут вниз вместо верха. Легко и просто.",
+        "description_middlescroll" => "Если включено, твои ноты выравниваются по центру.",
+        "description_opponent_notes" => "Если выключено, ноты противника скрываются.",
+        "description_ghost_tapping" => "Если включено, ты не получишь промахи за нажатия,\nкогда нет доступных для попадания нот.",
+        "description_bad_and_shit_break_combo" => "Если включено, попадание на Bad или Shit сбрасывает комбо вместо простого промаха.",
+        "description_auto_pause" => "Если включено, игра ставится на паузу при потере фокуса окна.",
+        "description_pop_up_score" => "Если включено, показывает всплывающие подсказки комбо и оценок при попадании.",
+        "description_disable_reset_button" => "Если включено, нажатие Reset ничего не делает.",
+        "description_windows_gdi_effects" => "Разрешает эффекты Windows Desktop GDI. Оставь выключенным, если только не хочешь, чтобы моды их использовали.",
+        "description_hitsound_type" => "Если включено, ноты и клавиши издают звук при нажатии, иначе только при попадании по нотам!",
+        "description_hitsound_volume" => "Забавные ноты издают \"Тык!\", когда по ним попадаешь.",
+        "description_hit_sounds" => "Забавные ноты издают \"Любой звук\", когда по ним попадаешь.",
+        "description_rating_offset" => "Меняет, насколько поздно/рано нужно попасть для \"Шикарно!\"\nВыше значение — позже попадание.",
+        "description_flawless_hit_window" => "Меняет время в миллисекундах для попадания в Безупречно!.",
+        "description_sick_hit_window" => "Меняет время в миллисекундах\nдля попадания в \"Шикарно!\".",
+        "description_good_hit_window" => "Меняет время в миллисекундах\nдля попадания в \"Хорошо\".",
+        "description_bad_hit_window" => "Меняет время в миллисекундах\nдля попадания в \"Плохо\".",
+        "description_safe_frames" => "Меняет количество фреймов, на которые можно\nопоздать или опередить ноту.",
+        "description_accuracy_system" => "Выбери систему расчёта точности:\nWife3 — точность StepMania\nPsych — на основе рейтинга\nSimple — базовый (попадания/всего)\nosu!mania — взвешенная система\nDJMAX — с бонусом комбо\nITG — система очков танцев",
+        "description_system_score_multiplier" => "Выбери систему подсчёта очков за попадания",
+        "description_sustains_as_one_note" => "Если включено, удержания нельзя нажать при промахе,\nи они считаются за одно попадание/промах.\nОтключи для старой системы ввода.",
+        "description_game_over_vibration" => "Если включено, устройство вибрирует при Game Over.",
 
-        // --- Модчарт (ModchartSettingsSubState) ---
-        "description_modchartDebug" => "Показывает статистику рендеринга модчартов в стиле NotITG.\nОтключено из-за затрат производительности.",
-        "description_camera3dEnabled" => "Включает или отключает 3D-камеры.\nОтключение повышает производительность за счёт пропуска 3D-преобразований.",
-        "description_optimizeHolds" => "Оптимизирует рендеринг удержаний для производительности.\nНЕ рекомендуется для сложных модчартов — удержания могут выглядеть неправильно.",
-        "description_zScale" => "Масштабирует значения оси Z для управления глубиной.\nБольше значение = больше глубина.",
+        // Legacy
+        "description_use_psych_score_text" => "Если включено, использует оригинальный формат текста счёта Psych Engine.",
+        "description_vanilla_transition" => "Если включено, использует стандартный переход Psych Engine вместо кастомного.",
+        "description_lower_volume_on_focus_lost" => "Если включено, уменьшает громкость игры, когда окно не в фокусе.",
+        "description_use_psych_freeplay" => "Если включено, использует классический фриплей Psych Engine вместо PlusEngine.",
+        "description_use_scriptable_custom_states" => "Если включено, позволяет модам переопределять состояния через ScriptableState и CustomState.",
+        "description_drag_character_to_move" => "Если включено, позицию персонажа можно перетаскивать курсором, как в Codename Engine.",
+        "description_results_state_at_end" => "Если выключено, endSong не будет переходить в ResultsState во Фриплее/Режиме истории.",
 
-        // --- Старые настройки (LegacySettingsSubState) ---
-        "description_usePsychScoreText" => "Если включено, сохраняет оригинальный формат текста счёта Psych Engine.",
-        "description_vanillaTransition" => "Если включено, использует оригинальный переход Psych Engine вместо кастомного.",
-        "description_lowerVolumeOnFocusLost" => "Если включено, уменьшает громкость игры, когда окно не в фокусе.",
-        "description_usePsychFreeplay" => "Если включено, использует классический экран Freeplay Psych Engine вместо PlusEngine Freeplay.",
-        "description_useScriptableCustomStates" => "Если включено, позволяет модам переопределять состояния через ScriptableState и CustomState.",
-        "description_dragCharacterToMove" => "Если включено, позицию персонажа можно перетаскивать курсором, как в Codename Engine.",
-        "description_resultsStateAtEnd" => "Если выключено, конец песни не будет переходить в экран результатов в Freeplay/Story Mode.",
+        // Modchart
+        "description_modchart_debug" => "Показывает статистику рендерера модчарта в стиле NotITG.\nОтключено по умолчанию, т.к. требует производительности.",
+        "description_enable_3d_cameras" => "Включает или отключает 3D камеры.\nОтключение может повысить производительность.",
+        "description_optimize_hold_rendering" => "Оптимизирует рендеринг удержаний для лучшей производительности.\nНЕ рекомендуется для сложных модчартов — удержания могут выглядеть неправильно.",
+        "description_z-axis_scale" => "Масштабирует значения Z-оси для управления глубиной.\nБольше — глубже, меньше — плоско.",
+        "description_hold_subdivisions" => "Разбивает хвосты удержаний для более плавного вида.\nВыше значения — лучше качество, но нагрузка на производительность.\n(Рекомендуется: 4-8)",
 
-        // --- Цвета нот (NotesColorSubState / NotesColorLegacySubState) ---
-        "description_noteRGB" => "Если включено, ноты используют RGB-палитру.\nЕсли выключено, используются HSL-смещения.",
-        "description_noteColorsNotitg" => "RGB-ШЕЙДЕРЫ ОТКЛЮЧЕНЫ — скин NotITG сохраняет оригинальные цвета.",
-        "note_colors_tip" => "Нажми {1} для сброса выбранной части ноты.",
-        "note_colors_hold_tip" => "Удерживай {1} + {2} для полного сброса выбранной ноты.",
+        // ==================== ЦВЕТА НОТ ====================
+        "note_colors_tip" => "Нажми RESET для сброса выбранной части ноты.",
+        "note_colors_hold_tip" => "Удерживай {1} + RESET для полного сброса выбранной ноты.",
         "note_colors_shift" => "Shift",
         "note_colors_lb" => "Левый бампер",
+        "note_colors_notitg" => "ШЕЙДЕРЫ RGB ОТКЛЮЧЕНЫ - скин NotITG сохраняет оригинальные цвета",
 
-        // --- Меню цветов акцента (ThemeAccentColorSubState) ---
-        "theme_accent_color_title" => "Цвет акцента темы",
-        "theme_accent_color_hint" => "Предпросмотр виджетов MD3 при перетаскивании. ENTER — подтвердить, BACK — отмена.",
-        "theme_preview_box" => "Предпросмотр темы",
-        "accent_picker_box" => "Палитра акцента",
-        "md3_components_preview_box" => "Предпросмотр MD3",
-        "theme_accent_picker_hint" => "Колесо + яркость + палитра, без визуальной каши.",
-        "theme_accent_preview_title" => "ПРИМЕР ФРИПЛЕЯ",
-        "theme_accent_preview_meta" => "Предпросмотр своего акцента",
-        "theme_accent_chip_active" => "Акцент активен",
-        "theme_accent_chip_custom" => "Свой токен",
-        "theme_accent_live_preview" => "Живой предпросмотр",
-        "theme_accent_copy_hex" => "Копировать HEX",
-        "theme_accent_paste_hex" => "Вставить HEX",
-        "theme_accent_apply" => "Применить",
-        "theme_accent_cancel" => "Отмена",
-        "theme_accent_mini_hint" => "Справа показаны стандартные виджеты, тонированные твоим цветом.\nЕсли тут выглядит стрёмно — в меню будет так же.",
-        "theme_accent_section_standard" => "Стандартный прогресс",
-        "theme_accent_section_wavy" => "Волнистый прогресс",
-        "theme_accent_section_widgets" => "Другие виджеты",
-        "theme_accent_chip_preset_safe" => "Из пресета",
-        "theme_accent_chip_selected" => "Выбрано",
-        "theme_accent_chip_hex" => "HEX токен",
-        "theme_accent_use_custom" => "Свой акцент",
-        "theme_accent_preview" => "Предпросмотр",
-        "theme_accent_accent" => "Акцент",
-        "theme_accent_hex_label" => "HEX {1}",
-
-        // --- Задержка и Комбо (NoteOffsetState) ---
+        // ==================== ЗАДЕРЖКА И КОМБО ====================
         "delay_beat_hit" => "Бит попал!",
-        "delay_current_offset" => "Текущее смещение: {1} мс",
+        "delay_current_offset" => "Текущий оффсет: {1} мс",
         "combo_rating_offset" => "Смещение оценки:",
+        "combo_number_offset" => "Смещение числа:",
         "combo_numbers_offset" => "Смещение чисел:",
+        "keyviewer_offset" => "Смещение клавиш",
         "keyviewer_position_offset" => "Позиция клавиш:",
         "keyviewer_color_setting" => "Цвет клавиш:",
-        "note_delay" => "Задержка нот/бита",
         "combo_offset" => "Смещение комбо",
-        "keyviewer_offset" => "Смещение клавиш",
+        "note_delay" => "Задержка нот/бита",
         "switch_on_button" => "(Нажми {1} для переключения)",
+        "switch_on_accept" => "(Нажми Принять для переключения)",
+        "switch_on_start" => "(Нажми Старт для переключения)",
 
-        // --- Управление (ControlsSubState) ---
+        // ==================== УПРАВЛЕНИЕ ====================
         "keygroup_notes" => "НОТЫ",
         "keygroup_ui" => "ИНТЕРФЕЙС",
         "keygroup_volume" => "ГРОМКОСТЬ",
@@ -344,11 +316,53 @@ class RuRU
         "key_volume_down" => "Тише",
         "key_debug_1" => "Кнопка 1",
         "key_debug_2" => "Кнопка 2",
+        "key_fullscreen" => "Полный экран",
         "controls_rebinding" => "Переназначение {1}",
         "controls_rebinding2" => "Удерживай ESC для отмены\nУдерживай Backspace для удаления",
         "reset_to_default_keys" => "Сбросить на\nСтандартные",
 
-        // --- Фулл комбо ---
+        // ==================== ФИШКИ ГЕЙМПЛЕЯ ====================
+        "setting_scroll_type" => "Тип прокрутки",
+        "setting_scroll_type-multiplicative" => "Мультипликативный",
+        "setting_scroll_type-constant" => "Постоянный",
+        "setting_scroll_speed" => "Скорость прокрутки",
+        "setting_playback_rate" => "Скорость воспроизведения",
+        "setting_health_gain_multiplier" => "Множитель лечения",
+        "setting_health_loss_multiplier" => "Множитель урона",
+        "setting_instakill_on_miss" => "Мгновенная смерть при промахе",
+        "setting_practice_mode" => "Режим тренировки",
+        "setting_botplay" => "БотПлей",
+
+        // ==================== ВЫБОР ЦВЕТА АКЦЕНТА ====================
+        "theme_accent_picker" => "Выбор цвета акцента",
+        "theme_accent_color_title" => "Цвет акцента темы",
+        "theme_accent_color_hint" => "Предпросмотр виджетов MD3 при перетаскивании. ENTER — подтвердить, BACK — отмена.",
+        "theme_preview_box" => "Предпросмотр темы",
+        "accent_picker_box" => "Палитра акцента",
+        "md3_components_preview_box" => "Предпросмотр MD3",
+        "theme_accent_picker_hint" => "Колесо + яркость + палитра, без визуальной каши.",
+        "theme_accent_preview_title" => "ПРИМЕР ФРИПЛЕЯ",
+        "theme_accent_preview_meta" => "Предпросмотр своего акцента",
+        "theme_accent_chip_active" => "Акцент активен",
+        "theme_accent_chip_custom" => "Свой токен",
+        "theme_accent_live_preview" => "Живой предпросмотр",
+        "theme_accent_copy_hex" => "Копировать HEX",
+        "theme_accent_paste_hex" => "Вставить HEX",
+        "theme_accent_apply" => "Применить",
+        "theme_accent_cancel" => "Отмена",
+        "theme_accent_mini_hint" => "Справа показаны стандартные виджеты, тонированные твоим цветом. Если тут выглядит стрёмно — в меню будет так же.",
+        "theme_accent_section_standard" => "Стандартный прогресс",
+        "theme_accent_section_wavy" => "Волнистый прогресс",
+        "theme_accent_section_widgets" => "Другие виджеты",
+        "theme_accent_chip_preset_safe" => "Из пресета",
+        "theme_accent_chip_selected" => "Выбрано",
+        "theme_accent_chip_hex" => "HEX токен",
+        "theme_accent_use_custom" => "Свой акцент",
+        "theme_accent_preview" => "Предпросмотр",
+        "theme_accent_accent" => "Акцент",
+        "theme_accent_hex_label" => "HEX {1}",
+
+        // ==================== ПОЛНЫЕ КОМБО ====================
         "clear" => "Чисто",
         "sdcb" => "SDCB",
         "fc" => "FC",
@@ -357,19 +371,18 @@ class RuRU
         "rating_fc" => "FC",
         "rating_gfc" => "GFC",
         "rating_sfc" => "SFC",
-        "rating_bfc" => "BFC",
+        "rating_bfc" => "BFC", 
         "rating_efc" => "EFC",
         "rating_smc" => "SMC",
-        "rating_lmc" => "LMC",
+        "rating_lmc" => "LMC", 
         "rating_mmc" => "MMC",
         "rating_hmc" => "HMC",
 
-        // --- Подтверждение сброса ---
         "reset_score_confirm" => "Ты уверен, что хочешь сбросить счёт и точность для этой песни?",
 
-        // --- Мастер-меню редактора ---
+        // ==================== РЕДАКТОРЫ ====================
         "chart_editor" => "Редактор чартов",
-        "character_editor" => "Редактор персонажей",
+        "character_editor" => "Редактор персонажей", 
         "stage_editor" => "Редактор сцен",
         "week_editor" => "Редактор недель",
         "menu_character_editor" => "Редактор меню-персонажей",
@@ -381,7 +394,7 @@ class RuRU
 
         "time_hours" => "Ч.",
 
-        // --- Результаты ---
+        // ==================== РЕЗУЛЬТАТЫ ====================
         "results_title" => "Результаты",
         "results_score" => "Счёт",
         "results_accuracy" => "Точность",
@@ -391,17 +404,17 @@ class RuRU
         "results_press_enter_mobile" => "Нажми A\nчтобы продолжить",
         "results_practice_mode" => "Сыграно в режиме тренировки",
 
-        // --- Счётчики оценок ---
+        // ==================== СЧЁТЧИКИ ОЦЕНОК ====================
         "judgement_flawlesss" => "Безупречно",
-        "judgement_sicks" => "Шикарно",
-        "judgement_goods" => "Хорошо",
-        "judgement_bads" => "Плохо",
-        "judgement_shits" => "Дерьмо",
-        "judgement_misses" => "Промахи",
-        "judgement_combo" => "Комбо",
+        "judgement_sicks" => "Шикарно  ", 
+        "judgement_goods" => "Хорошо   ",
+        "judgement_bads" => "Плохо    ",
+        "judgement_shits" => "Дерьмо   ",
+        "judgement_misses" => "Промахи  ",
+        "judgement_combo" => "Комбо    ",
         "judgement_max_combo" => "Макс. комбо",
 
-        // --- Редактор ---
+        // ==================== РЕДАКТОР (PLAYSTATE) ====================
         "editorplaystate_section" => "Секция: {1}",
         "editorplaystate_tip" => "Нажми ESC для возврата в Редактор чартов",
         "editorplaystate_time" => "Время: {1} / {2}",
@@ -409,8 +422,8 @@ class RuRU
         "editorplaystate_beat" => "Бит: {1}",
         "editorplaystate_step" => "Шаг: {1}",
         "editorplaystate_score" => "Попадания: {1} | Промахи: {2}",
-
-        // --- Мобильные / Android ---
+        
+        // ==================== МОБИЛЬНЫЕ / ANDROID ====================
         "mobile_notice" => "Уведомление",
         "mobile_warning" => "Предупреждение",
         "mobile_error" => "Ошибка",
@@ -428,29 +441,31 @@ class RuRU
         "touchpad_actionmode_missing" => "У этого режима тачпада не настроены кнопки действий.",
         "touchpad_dpadmode_missing" => "У этого режима тачпада не настроен d-pad.",
 
-        // --- Разное ---
+        // ==================== РАЗНОЕ ====================
         "modchart_converter" => "Конвертер модчартов",
+        "now_loading" => "Загрузка{1}",
+        "loading_timeout" => "Загрузка слишком долгая...\nНажми ESC для возврата",
 
-        // --- Сложности ---
+        // ==================== СЛОЖНОСТИ ====================
         "difficulty_easy" => "Легко",
         "difficulty_normal" => "Нормально",
         "difficulty_hard" => "Хард",
         "difficulty_erect" => "Эксперт",
         "difficulty_nightmare" => "Кошмар",
 
-        // --- Отладка и время ---
+        // ==================== ОТЛАДКА И ВРЕМЯ ====================
         "debug_speed" => "Скорость",
         "debug_bpm" => "BPM",
         "debug_health" => "Здоровье",
         "psych_engine_version" => "Psych Engine v",
         "fnf_version" => "Friday Night Funkin' v",
 
-        // --- Улучшенные переходы ---
+        // ==================== УЛУЧШЕННЫЕ ПЕРЕХОДЫ ====================
         "trans_opening" => "Открытие...",
         "trans_loading" => "Загрузка...",
         "trans_completed" => "Готово!",
 
-        // --- Дни недели ---
+        // ==================== ДНИ НЕДЕЛИ ====================
         "day_sunday" => "Воскресенье",
         "day_monday" => "Понедельник",
         "day_tuesday" => "Вторник",
@@ -459,7 +474,7 @@ class RuRU
         "day_friday" => "Пятница",
         "day_saturday" => "Суббота",
 
-        // --- Месяцы ---
+        // ==================== МЕСЯЦЫ ====================
         "month_january" => "Январь",
         "month_february" => "Февраль",
         "month_march" => "Март",
@@ -473,6 +488,10 @@ class RuRU
         "month_november" => "Ноябрь",
         "month_december" => "Декабрь",
 
+        // ==================== ПРИМЕРЫ ДЛЯ ЯЗЫКА ====================
+        "controls" => "Управление",
+        "mobile_settings" => "Мобильные настройки",
+        "notes" => "Цвета нот",
         "language_font" => "vcr_ru.ttf",
         "language_example_text" => "Это пример текста для Русского языка."
     ];

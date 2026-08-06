@@ -1,4 +1,4 @@
-name: Build and Release (Haxe/Lime)
+name: Build and Release
 
 on:
   workflow_dispatch:
@@ -27,11 +27,11 @@ on:
         type: boolean
         default: false
       release_tag:
-        description: 'Release tag (if release_mode is true)'
+        description: 'Release tag'
         type: string
         default: 'v1.0.0'
       release_name:
-        description: 'Release name (if release_mode is true)'
+        description: 'Release name'
         type: string
         default: 'Release v1.0.0'
 
@@ -57,7 +57,7 @@ jobs:
       - name: Cache Haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v6
+          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v7
           path: |
             ~/.haxelib/
             ~/.cache/lime
@@ -132,7 +132,7 @@ jobs:
       - name: Cache Haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v6
+          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v7
           path: |
             ~/.haxelib/
             ~/.cache/lime
@@ -250,7 +250,7 @@ jobs:
       - name: Cache Haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v6
+          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v7
           path: |
             ~\.haxelib\
             ~\AppData\Local\lime\
@@ -378,21 +378,21 @@ jobs:
           echo "|----------|--------|------------|----------|" >> $GITHUB_STEP_SUMMARY
           
           if [[ "${{ github.event.inputs.build_linux }}" == "true" ]]; then
-            echo "| Linux | ${{ needs.build_linux.result }} | ${{ github.event.inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/linux-x64) |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🐧 Linux x64 | ${{ needs.build_linux.result }} | ${{ github.event.inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/linux-x64) |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "| Linux | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🐧 Linux x64 | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
           fi
           
           if [[ "${{ github.event.inputs.build_android }}" == "true" ]]; then
-            echo "| Android | ${{ needs.build_android.result }} | ${{ github.event.inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/android) |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🤖 Android | ${{ needs.build_android.result }} | ${{ github.event.inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/android) |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "| Android | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🤖 Android | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
           fi
           
           if [[ "${{ github.event.inputs.build_windows }}" == "true" ]]; then
-            echo "| Windows | ${{ needs.build_windows.result }} | ${{ github.event.inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/windows-x64) |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🪟 Windows x64 | ${{ needs.build_windows.result }} | ${{ github.event.inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/windows-x64) |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "| Windows | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🪟 Windows x64 | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
           fi
           
           if [[ "${{ github.event.inputs.release_mode }}" == "true" ]]; then

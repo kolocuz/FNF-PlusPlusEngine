@@ -35,8 +35,10 @@ on:
         type: string
         default: 'Release v1.0.0'
 
+permissions:
+  contents: write
+
 jobs:
-  # Вызываем Linux
   call-build-linux:
     uses: ./.github/workflows/build-linux.yml
     if: inputs.build_linux == 'true'
@@ -44,7 +46,6 @@ jobs:
       build_mode: ${{ inputs.build_mode }}
     secrets: inherit
 
-  # Вызываем Android
   call-build-android:
     uses: ./.github/workflows/build-android.yml
     if: inputs.build_android == 'true'
@@ -52,7 +53,6 @@ jobs:
       build_mode: ${{ inputs.build_mode }}
     secrets: inherit
 
-  # Вызываем Windows
   call-build-windows:
     uses: ./.github/workflows/build-windows.yml
     if: inputs.build_windows == 'true'
@@ -60,12 +60,91 @@ jobs:
       build_mode: ${{ inputs.build_mode }}
     secrets: inherit
 
-  # Вызываем релиз
-  call-publish-release:
-    uses: ./.github/workflows/publish-release.yml
+  publish-release:
+    name: Publish Release
+    runs-on: ubuntu-24.04
     needs: [call-build-linux, call-build-android, call-build-windows]
     if: inputs.release_mode == 'true'
-    with:
-      release_tag: ${{ inputs.release_tag }}
-      release_name: ${{ inputs.release_name }}
-    secrets: inherit
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: linux-x64
+          path: release-assets
+        continue-on-error: true
+
+      - name: Download Android artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: android
+          path: release-assets
+        continue-on-error: true
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-x64
+          path: release-assets
+        continue-on-error: true
+
+      - name: List release assets
+        run: ls -la release-assets/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          name: ${{ inputs.release_name }}
+          draft: false
+          prerelease: false
+          files: |
+            release-assets/*.tar.gz
+            release-assets/*.apk
+            release-assets/*.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-24.04
+    needs:
+      - call-build-linux
+      - call-build-android
+      - call-build-windows
+      - publish-release
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status | Build Mode | Artifact |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|------------|----------|" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ inputs.build_linux }}" == "true" ]]; then
+            echo "| Linux | ${{ needs.call-build-linux.result }} | ${{ inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/linux-x64) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Linux | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ inputs.build_android }}" == "true" ]]; then
+            echo "| Android | ${{ needs.call-build-android.result }} | ${{ inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/android) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Android | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ inputs.build_windows }}" == "true" ]]; then
+            echo "| Windows | ${{ needs.call-build-windows.result }} | ${{ inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/windows-x64) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Windows | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ inputs.release_mode }}" == "true" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ✅ Release created!" >> $GITHUB_STEP_SUMMARY
+            echo "- **Tag:** [${{ inputs.release_tag }}](https://github.com/${{ github.repository }}/releases/tag/${{ inputs.release_tag }})" >> $GITHUB_STEP_SUMMARY
+            echo "- **Name:** ${{ inputs.release_name }}" >> $GITHUB_STEP_SUMMARY
+          fi

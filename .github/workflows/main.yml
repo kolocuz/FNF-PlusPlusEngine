@@ -57,7 +57,7 @@ jobs:
       - name: Cache Haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v5
+          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v6
           path: |
             ~/.haxelib/
             ~/.cache/lime
@@ -92,13 +92,8 @@ jobs:
 
       - name: Install Libraries
         run: |
-          if [ -f "./setup/unish-lib.sh" ]; then
-            chmod +x ./setup/unish-lib.sh
-            ./setup/unish-lib.sh
-          else
-            echo "Setup script not found, installing via haxelib"
-            haxelib install all
-          fi
+          chmod +x ./setup/unish-lib.sh
+          ./setup/unish-lib.sh
 
       - name: Build (fast)
         if: ${{ github.event.inputs.build_mode == 'fast' }}
@@ -137,7 +132,7 @@ jobs:
       - name: Cache Haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v5
+          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v6
           path: |
             ~/.haxelib/
             ~/.cache/lime
@@ -209,13 +204,8 @@ jobs:
 
       - name: Install Libraries
         run: |
-          if [ -f "./setup/unish-lib.sh" ]; then
-            chmod +x ./setup/unish-lib.sh
-            ./setup/unish-lib.sh
-          else
-            echo "Setup script not found, installing via haxelib"
-            haxelib install all
-          fi
+          chmod +x ./setup/unish-lib.sh
+          ./setup/unish-lib.sh
 
       - name: Configure Lime
         run: |
@@ -260,7 +250,7 @@ jobs:
       - name: Cache Haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v5
+          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v6
           path: |
             ~\.haxelib\
             ~\AppData\Local\lime\
@@ -280,6 +270,11 @@ jobs:
             build/
             export/release/windows/obj/
 
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Setup Haxe
         uses: krdlab/setup-haxe@master
         with:
@@ -290,13 +285,13 @@ jobs:
 
       - name: Install Libraries
         run: |
-          if (Test-Path "./setup/windows-lib.bat") {
-            & ./setup/windows-lib.bat
-          } else {
-            Write-Host "Setup script not found, installing via haxelib"
-            haxelib install all
-          }
-        shell: pwsh
+          cmd /c ".\setup\windows-lib.bat"
+        shell: cmd
+
+      - name: Configure MSVC for Haxe
+        run: |
+          cmd /c ".\setup\windows-msvc.bat"
+        shell: cmd
 
       - name: Build (fast)
         if: ${{ github.event.inputs.build_mode == 'fast' }}

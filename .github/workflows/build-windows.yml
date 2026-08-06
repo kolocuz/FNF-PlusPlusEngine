@@ -1,0 +1,81 @@
+name: Build Windows x64
+
+on:
+  workflow_call:
+    inputs:
+      build_mode:
+        required: true
+        type: string
+
+env:
+  HAXE_VERSION: 4.3.7
+  LIME_VERSION: 8.2.1
+
+jobs:
+  build:
+    name: Build Windows x64
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        id: cache-haxelib
+        uses: actions/cache@v4
+        with:
+          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v2
+          enableCrossOsArchive: true
+          path: |
+            ~\.haxelib\
+            ~\AppData\Local\lime\
+          restore-keys: |
+            haxe-libs-
+
+      - name: Cache Haxe build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          key: haxe-build-windows-${{ github.sha }}
+          restore-keys: |
+            haxe-build-windows-${{ github.ref }}
+            haxe-build-windows-
+          path: |
+            .haxe\
+            build\
+            export\release\windows\obj\
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Setup haxelib local
+        run: haxelib newrepo
+
+      - name: Install Libraries
+        if: steps.cache-haxelib.outputs.cache-hit != 'true'
+        run: |
+          cmd /c setup\windows-lib.bat
+
+      - name: Build (fast mode)
+        if: inputs.build_mode == 'fast'
+        run: haxelib run lime build Project.xml windows -DofficialBuild
+
+      - name: Build (full mode)
+        if: inputs.build_mode == 'full'
+        run: |
+          haxelib run lime rebuild -clean
+          haxelib run lime build Project.xml windows -DofficialBuild
+
+      - name: Package artifact
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path export/release/windows/bin/* -DestinationPath dist/FNF-PlusEngine-windows-x64.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-x64
+          path: dist/FNF-PlusEngine-windows-x64.zip
+          if-no-files-found: error

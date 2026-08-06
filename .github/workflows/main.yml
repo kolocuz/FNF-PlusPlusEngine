@@ -1,0 +1,413 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_linux:
+        description: 'Build Linux x64'
+        type: boolean
+        default: true
+      build_android:
+        description: 'Build Android'
+        type: boolean
+        default: true
+      build_windows:
+        description: 'Build Windows x64'
+        type: boolean
+        default: true
+      build_mode:
+        description: 'Build mode'
+        type: choice
+        options:
+          - fast
+          - full
+        default: fast
+      release_mode:
+        description: 'Create GitHub Release'
+        type: boolean
+        default: false
+      release_tag:
+        description: 'Release tag (if release_mode is true)'
+        type: string
+        default: 'v1.0.0'
+      release_name:
+        description: 'Release name (if release_mode is true)'
+        type: string
+        default: 'Release v1.0.0'
+
+permissions:
+  contents: write
+
+env:
+  HAXE_VERSION: 4.3.7
+  LIME_VERSION: 8.2.1
+
+jobs:
+  build_linux:
+    name: Build Linux x64
+    runs-on: ubuntu-24.04
+    if: inputs.build_linux == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        id: cache-haxelib
+        uses: actions/cache@v4
+        with:
+          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v2
+          enableCrossOsArchive: true
+          path: |
+            ~/.haxelib/
+            ~/.cache/lime
+          restore-keys: |
+            haxe-libs-
+
+      - name: Cache Haxe build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          key: haxe-build-linux-${{ github.sha }}
+          restore-keys: |
+            haxe-build-linux-${{ github.ref }}
+            haxe-build-linux-
+          path: |
+            .haxe/
+            build/
+            export/release/linux/obj/
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Setup haxelib local
+        run: haxelib newrepo
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvlc-dev libvlccore-dev
+
+      - name: Install Libraries
+        if: steps.cache-haxelib.outputs.cache-hit != 'true'
+        run: |
+          chmod +x ./setup/unish-lib.sh
+          ./setup/unish-lib.sh
+
+      - name: Build (fast mode)
+        if: inputs.build_mode == 'fast'
+        run: haxelib run lime build Project.xml linux -DofficialBuild
+
+      - name: Build (full mode)
+        if: inputs.build_mode == 'full'
+        run: |
+          haxelib run lime rebuild -clean
+          haxelib run lime build Project.xml linux -DofficialBuild
+
+      - name: Package artifact
+        run: |
+          mkdir -p dist
+          tar -C export/release/linux/bin -czf dist/FNF-PlusEngine-linux-x64.tar.gz .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-x64
+          path: dist/FNF-PlusEngine-linux-x64.tar.gz
+          if-no-files-found: error
+
+  build_android:
+    name: Build Android
+    runs-on: ubuntu-24.04
+    if: inputs.build_android == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        id: cache-haxelib
+        uses: actions/cache@v4
+        with:
+          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v2
+          enableCrossOsArchive: true
+          path: |
+            ~/.haxelib/
+            ~/.cache/lime
+          restore-keys: |
+            haxe-libs-
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-v1
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          restore-keys: |
+            gradle-
+
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          key: android-sdk-${{ runner.os }}-${{ hashFiles('**/build.gradle') }}
+          path: ${{ env.ANDROID_SDK_ROOT }}
+          restore-keys: |
+            android-sdk-${{ runner.os }}-
+
+      - name: Cache Haxe build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          key: haxe-build-android-${{ github.sha }}
+          restore-keys: |
+            haxe-build-android-${{ github.ref }}
+            haxe-build-android-
+          path: |
+            .haxe/
+            build/
+            export/release/android/obj/
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Setup haxelib local
+        run: haxelib newrepo
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: "21"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android packages
+        run: |
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "cmdline-tools;latest" \
+            "ndk;27.3.13750724"
+          {
+            echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.3.13750724"
+            echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/27.3.13750724"
+          } >> "$GITHUB_ENV"
+
+      - name: Install Libraries
+        if: steps.cache-haxelib.outputs.cache-hit != 'true'
+        run: |
+          chmod +x ./setup/unish-lib.sh
+          ./setup/unish-lib.sh
+
+      - name: Configure Lime
+        run: |
+          haxelib run lime setup android
+          haxelib run lime config ANDROID_SDK "$ANDROID_SDK_ROOT"
+          haxelib run lime config ANDROID_NDK_ROOT "$ANDROID_SDK_ROOT/ndk/27.3.13750724"
+          haxelib run lime config JAVA_HOME "$JAVA_HOME"
+
+      - name: Build (fast mode)
+        if: inputs.build_mode == 'fast'
+        run: haxelib run lime build Project.xml android -DofficialBuild -DHXCPP_IGNORE_WARNINGS
+
+      - name: Build (full mode)
+        if: inputs.build_mode == 'full'
+        run: |
+          haxelib run lime rebuild -clean
+          haxelib run lime build Project.xml android -DofficialBuild -DHXCPP_IGNORE_WARNINGS
+
+      - name: Package artifact
+        run: |
+          mkdir -p dist
+          apk_path="$(find export/release/android/bin -type f -name '*.apk' | head -n 1)"
+          test -n "$apk_path"
+          cp "$apk_path" dist/FNF-PlusEngine-android.apk
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: android
+          path: dist/FNF-PlusEngine-android.apk
+          if-no-files-found: error
+
+  build_windows:
+    name: Build Windows x64
+    runs-on: windows-2025
+    if: inputs.build_windows == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        id: cache-haxelib
+        uses: actions/cache@v4
+        with:
+          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v2
+          enableCrossOsArchive: true
+          path: |
+            ~\.haxelib\
+            ~\AppData\Local\lime\
+          restore-keys: |
+            haxe-libs-
+
+      - name: Cache Haxe build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          key: haxe-build-windows-${{ github.sha }}
+          restore-keys: |
+            haxe-build-windows-${{ github.ref }}
+            haxe-build-windows-
+          path: |
+            .haxe\
+            build\
+            export\release\windows\obj\
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Setup haxelib local
+        run: haxelib newrepo
+
+      - name: Install Libraries
+        if: steps.cache-haxelib.outputs.cache-hit != 'true'
+        run: |
+          cmd /c setup\windows-lib.bat
+
+      - name: Build (fast mode)
+        if: inputs.build_mode == 'fast'
+        run: haxelib run lime build Project.xml windows -DofficialBuild
+
+      - name: Build (full mode)
+        if: inputs.build_mode == 'full'
+        run: |
+          haxelib run lime rebuild -clean
+          haxelib run lime build Project.xml windows -DofficialBuild
+
+      - name: Package artifact
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path export/release/windows/bin/* -DestinationPath dist/FNF-PlusEngine-windows-x64.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-x64
+          path: dist/FNF-PlusEngine-windows-x64.zip
+          if-no-files-found: error
+
+  publish_release:
+    name: Publish Release
+    runs-on: ubuntu-24.04
+    needs: [build_linux, build_android, build_windows]
+    if: inputs.release_mode == 'true'
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v7
+        if: inputs.build_linux == 'true'
+        with:
+          name: linux-x64
+          path: release-assets
+        continue-on-error: true
+
+      - name: Download Android artifact
+        uses: actions/download-artifact@v7
+        if: inputs.build_android == 'true'
+        with:
+          name: android
+          path: release-assets
+        continue-on-error: true
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v7
+        if: inputs.build_windows == 'true'
+        with:
+          name: windows-x64
+          path: release-assets
+        continue-on-error: true
+
+      - name: List release assets
+        run: ls -la release-assets/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          name: ${{ inputs.release_name }}
+          draft: false
+          prerelease: false
+          files: |
+            release-assets/*.tar.gz
+            release-assets/*.apk
+            release-assets/*.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-24.04
+    needs: [build_linux, build_android, build_windows, publish_release]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status | Build Mode | Artifact |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|------------|----------|" >> $GITHUB_STEP_SUMMARY
+          
+          LINUX_RESULT="${{ needs.build_linux.result }}"
+          if [[ "${{ inputs.build_linux }}" == "true" ]]; then
+            if [[ "$LINUX_RESULT" == "success" ]]; then
+              echo "| Linux | ✅ $LINUX_RESULT | ${{ inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/linux-x64) |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| Linux | ❌ $LINUX_RESULT | ${{ inputs.build_mode }} | - |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "| Linux | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          ANDROID_RESULT="${{ needs.build_android.result }}"
+          if [[ "${{ inputs.build_android }}" == "true" ]]; then
+            if [[ "$ANDROID_RESULT" == "success" ]]; then
+              echo "| Android | ✅ $ANDROID_RESULT | ${{ inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/android) |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| Android | ❌ $ANDROID_RESULT | ${{ inputs.build_mode }} | - |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "| Android | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          WINDOWS_RESULT="${{ needs.build_windows.result }}"
+          if [[ "${{ inputs.build_windows }}" == "true" ]]; then
+            if [[ "$WINDOWS_RESULT" == "success" ]]; then
+              echo "| Windows | ✅ $WINDOWS_RESULT | ${{ inputs.build_mode }} | [⬇️ Download](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/windows-x64) |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| Windows | ❌ $WINDOWS_RESULT | ${{ inputs.build_mode }} | - |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "| Windows | ⏭️ Skipped | - | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ inputs.release_mode }}" == "true" ]]; then
+            RELEASE_RESULT="${{ needs.publish_release.result }}"
+            if [[ "$RELEASE_RESULT" == "success" ]]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### ✅ Release created!" >> $GITHUB_STEP_SUMMARY
+              echo "- **Tag:** [${{ inputs.release_tag }}](https://github.com/${{ github.repository }}/releases/tag/${{ inputs.release_tag }})" >> $GITHUB_STEP_SUMMARY
+              echo "- **Name:** ${{ inputs.release_name }}" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### ❌ Release failed: $RELEASE_RESULT" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi

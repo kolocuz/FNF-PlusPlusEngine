@@ -150,7 +150,7 @@ class RuRU
         "achievement_pessy_easter_egg" => "Подружка Движка",
         "description_pessy_easter_egg" => "Хе-хе, ты меня нашёл~!",
 
-        // ==================== НАСТРОЙКИ (ПУНКТЫ МЕНЮ) ====================
+        // ==================== НАСТРОЙКИ  ====================
         "options_note_colors" => "Цвета нот",
         "options_controls" => "Управление",
         "options_adjust_delay_and_combo" => "Задержка и Комбо",

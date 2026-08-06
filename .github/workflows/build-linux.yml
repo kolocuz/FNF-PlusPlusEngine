@@ -1,0 +1,87 @@
+name: Build Linux x64
+
+on:
+  workflow_call:
+    inputs:
+      build_mode:
+        required: true
+        type: string
+
+env:
+  HAXE_VERSION: 4.3.7
+  LIME_VERSION: 8.2.1
+
+jobs:
+  build:
+    name: Build Linux x64
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Cache Haxelib
+        id: cache-haxelib
+        uses: actions/cache@v4
+        with:
+          key: haxe-libs-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v2
+          enableCrossOsArchive: true
+          path: |
+            ~/.haxelib/
+            ~/.cache/lime
+          restore-keys: |
+            haxe-libs-
+
+      - name: Cache Haxe build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          key: haxe-build-linux-${{ github.sha }}
+          restore-keys: |
+            haxe-build-linux-${{ github.ref }}
+            haxe-build-linux-
+          path: |
+            .haxe/
+            build/
+            export/release/linux/obj/
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Setup haxelib local
+        run: haxelib newrepo
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvlc-dev libvlccore-dev
+
+      - name: Install Libraries
+        if: steps.cache-haxelib.outputs.cache-hit != 'true'
+        run: |
+          chmod +x ./setup/unish-lib.sh
+          ./setup/unish-lib.sh
+
+      - name: Build (fast mode)
+        if: inputs.build_mode == 'fast'
+        run: haxelib run lime build Project.xml linux -DofficialBuild
+
+      - name: Build (full mode)
+        if: inputs.build_mode == 'full'
+        run: |
+          haxelib run lime rebuild -clean
+          haxelib run lime build Project.xml linux -DofficialBuild
+
+      - name: Package artifact
+        run: |
+          mkdir -p dist
+          tar -C export/release/linux/bin -czf dist/FNF-PlusEngine-linux-x64.tar.gz .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-x64
+          path: dist/FNF-PlusEngine-linux-x64.tar.gz
+          if-no-files-found: error

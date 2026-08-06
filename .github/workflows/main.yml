@@ -288,11 +288,6 @@ jobs:
           cmd /c ".\setup\windows-lib.bat"
         shell: cmd
 
-      - name: Configure MSVC for Haxe
-        run: |
-          cmd /c ".\setup\windows-msvc.bat"
-        shell: cmd
-
       - name: Build (fast)
         if: ${{ github.event.inputs.build_mode == 'fast' }}
         run: haxelib run lime build Project.xml windows -DofficialBuild

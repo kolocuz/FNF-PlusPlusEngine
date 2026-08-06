@@ -57,7 +57,7 @@ jobs:
       - name: Cache Haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v4
+          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v5
           path: |
             ~/.haxelib/
             ~/.cache/lime
@@ -91,9 +91,14 @@ jobs:
           sudo apt-get install -y libvlc-dev libvlccore-dev
 
       - name: Install Libraries
-        uses: ./.github/actions/install-libs
-        with:
-          setup-script: ./setup/unish-lib.sh
+        run: |
+          if [ -f "./setup/unish-lib.sh" ]; then
+            chmod +x ./setup/unish-lib.sh
+            ./setup/unish-lib.sh
+          else
+            echo "Setup script not found, installing via haxelib"
+            haxelib install all
+          fi
 
       - name: Build (fast)
         if: ${{ github.event.inputs.build_mode == 'fast' }}
@@ -132,7 +137,7 @@ jobs:
       - name: Cache Haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v4
+          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v5
           path: |
             ~/.haxelib/
             ~/.cache/lime
@@ -203,9 +208,14 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Install Libraries
-        uses: ./.github/actions/install-libs
-        with:
-          setup-script: ./setup/unish-lib.sh
+        run: |
+          if [ -f "./setup/unish-lib.sh" ]; then
+            chmod +x ./setup/unish-lib.sh
+            ./setup/unish-lib.sh
+          else
+            echo "Setup script not found, installing via haxelib"
+            haxelib install all
+          fi
 
       - name: Configure Lime
         run: |
@@ -250,7 +260,7 @@ jobs:
       - name: Cache Haxelib
         uses: actions/cache@v4
         with:
-          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v4
+          key: haxe-libs-${{ runner.os }}-${{ hashFiles('**/haxelib.json', '**/Project.xml') }}-v5
           path: |
             ~\.haxelib\
             ~\AppData\Local\lime\
@@ -279,9 +289,14 @@ jobs:
         run: haxelib newrepo
 
       - name: Install Libraries
-        uses: ./.github/actions/install-libs
-        with:
-          setup-script: ./setup/windows-lib.bat
+        run: |
+          if (Test-Path "./setup/windows-lib.bat") {
+            & ./setup/windows-lib.bat
+          } else {
+            Write-Host "Setup script not found, installing via haxelib"
+            haxelib install all
+          }
+        shell: pwsh
 
       - name: Build (fast)
         if: ${{ github.event.inputs.build_mode == 'fast' }}

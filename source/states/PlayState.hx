@@ -2507,7 +2507,10 @@ private function generateSong():Void
                 }
             }
             if (oggFile != null)
-                inst.loadEmbedded(openfl.media.Sound.fromFile(customAudioPath + oggFile));
+            {
+                var instPath = customAudioPath + oggFile;
+                inst.loadEmbedded(openfl.media.Sound.fromFile(instPath));
+            }
             else
             {
                 trace('No .ogg file found in: $customAudioPath');
@@ -2518,7 +2521,9 @@ private function generateSong():Void
             #end
         }
         else
+        {
             inst.loadEmbedded(Paths.inst(songData.song));
+        }
     }
     catch (e:Dynamic) {}
     FlxG.sound.list.add(inst);
@@ -2542,14 +2547,13 @@ private function generateSong():Void
     var daBpm:Float = Conductor.bpm;
     var generatedNoteHeads:Map<String, Note> = [];
     var loadStartTime:Float = Date.now().getTime();
+    var regularNoteCnt:Int = 0;
+    var sustainNoteCnt:Int = 0;
 
     function noteHeadKey(strumTime:Float, noteColumn:Int, mustPress:Bool, noteType:String):String
     {
         return Std.string(strumTime) + '|' + noteColumn + '|' + (mustPress ? '1' : '0') + '|' + (noteType == null ? '' : noteType);
     }
-
-    var regularNoteCnt:Int = 0;
-    var sustainNoteCnt:Int = 0;
 
     for (section in sectionsData)
     {
@@ -2558,12 +2562,13 @@ private function generateSong():Void
 
         for (i in 0...section.sectionNotes.length)
         {
-            final songNotes:Array<Dynamic> = section.sectionNotes[i];
-            var spawnTime:Float = songNotes[0];
-            var noteColumn:Int = Std.int(songNotes[1] % totalColumns);
-            var holdLength:Float = songNotes[2];
-            var noteType:String = !Std.isOfType(songNotes[3], String) ? Note.defaultNoteTypes[songNotes[3]] : songNotes[3];
-            if (Math.isNaN(holdLength)) holdLength = 0.0;
+            final songNotes: Array<Dynamic> = section.sectionNotes[i];
+            var spawnTime: Float = songNotes[0];
+            var noteColumn: Int = Std.int(songNotes[1] % totalColumns);
+            var holdLength: Float = songNotes[2];
+            var noteType: String = !Std.isOfType(songNotes[3], String) ? Note.defaultNoteTypes[songNotes[3]] : songNotes[3];
+            if (Math.isNaN(holdLength))
+                holdLength = 0.0;
 
             var gottaHitNote:Bool = (songNotes[1] < totalColumns);
             var mustPress:Bool = playOpponent ? !gottaHitNote : gottaHitNote;
@@ -2584,7 +2589,7 @@ private function generateSong():Void
             }
 
             var swagNote:Note = new Note(spawnTime, noteColumn, oldNote);
-            var isAlt:Bool = section.altAnim && !gottaHitNote;
+            var isAlt: Bool = section.altAnim && !gottaHitNote;
             swagNote.gfNote = (section.gfSection && gottaHitNote == section.mustHitSection);
             swagNote.animSuffix = isAlt ? "-alt" : "";
             swagNote.mustPress = mustPress;
@@ -2592,7 +2597,6 @@ private function generateSong():Void
             swagNote.sustainLength = holdLength;
             swagNote.noteType = noteType;
             swagNote.scrollFactor.set();
-            
             unspawnNotes.push(swagNote);
             regularNoteCnt++;
             generatedNoteHeads.set(noteKey, swagNote);
@@ -2659,7 +2663,9 @@ private function generateSong():Void
                 {
                     swagNote.x += 310;
                     if(noteColumn > 1)
+                    {
                         swagNote.x += getGameplaySafeWidth() / 2 + 25;
+                    }
                 }
             }
             if(!noteTypes.contains(swagNote.noteType))
@@ -2684,7 +2690,7 @@ private function generateSong():Void
 
     unspawnNotes.sort(sortByTime);
     generatedMusic = true;
-
+    
     totalNotes = 0;
     for (note in unspawnNotes)
     {
@@ -2694,7 +2700,6 @@ private function generateSong():Void
     
     trace('Ready to PLAY!');
 }
-
 	// called only once per different event (Used for precaching)
 	function eventPushed(event:EventNote) {
 		eventPushedUnique(event);

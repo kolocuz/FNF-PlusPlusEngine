@@ -3047,17 +3047,18 @@ class PlayState extends MusicBeatState
 		updateIconsScale(elapsed);
 		updateIconsPosition();
 
-		if (startedCountdown && !paused)
-		{
-			Conductor.songPosition += elapsed * 1000 * playbackRate;
-			if (Conductor.songPosition >= Conductor.offset)
-			{
-				Conductor.songPosition = FlxMath.lerp(FlxG.sound.music.time + Conductor.offset, Conductor.songPosition, Math.exp(-elapsed * 5));
-				var timeDiff:Float = Math.abs((FlxG.sound.music.time + Conductor.offset) - Conductor.songPosition);
-				if (timeDiff > 1000 * playbackRate)
-					Conductor.songPosition = Conductor.songPosition + 1000 * FlxMath.signOf(timeDiff);
-			}
-		}
+if (startedCountdown && !paused)
+{
+    var stepElapsed:Float = Math.min(elapsed, 0.05);
+    Conductor.songPosition += stepElapsed * 1000 * playbackRate;
+    if (Conductor.songPosition >= Conductor.offset)
+    {
+        Conductor.songPosition = FlxMath.lerp(FlxG.sound.music.time + Conductor.offset, Conductor.songPosition, Math.exp(-stepElapsed * 5));
+        var timeDiff:Float = Math.abs((FlxG.sound.music.time + Conductor.offset) - Conductor.songPosition);
+        if (timeDiff > 1000 * playbackRate)
+            Conductor.songPosition = FlxG.sound.music.time + Conductor.offset;
+    }
+}
 
 		initGameplayRuntimeBridgeIfNeeded();
 		if (gameplayRuntimeBridge != null)

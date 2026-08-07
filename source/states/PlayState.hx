@@ -2547,7 +2547,6 @@ private function generateSong():Void
         return Std.string(strumTime) + '|' + noteColumn + '|' + (mustPress ? '1' : '0') + '|' + (noteType == null ? '' : noteType);
     }
 
-    // ===== FAST LOAD: Pre-count & Pre-allocate =====
     var useFastLoad:Bool = ClientPrefs.data.fastLoadSong;
     var loadStartTime:Float = Date.now().getTime();
     var sustainNoteCnt:Int = 0;
@@ -2555,7 +2554,6 @@ private function generateSong():Void
     
     if (useFastLoad)
     {
-        // Первый проход: считаем обычные ноты
         var totalRegularNotes:Int = 0;
         for (section in sectionsData)
             totalRegularNotes += section.sectionNotes.length;
@@ -2565,7 +2563,7 @@ private function generateSong():Void
     }
 
     var noteIndex:Int = 0;
-    var tempSustainNotes:Array<Note> = []; // Временный массив для сустейнов
+    var tempSustainNotes:Array<Note> = [];
 
     for (section in sectionsData)
     {
@@ -2609,7 +2607,6 @@ private function generateSong():Void
             swagNote.noteType = noteType;
             swagNote.scrollFactor.set();
             
-            // FastLoad: прямое присваивание | Normal: push
             if (useFastLoad)
                 unspawnNotes[noteIndex++] = swagNote;
             else
@@ -2624,7 +2621,10 @@ private function generateSong():Void
             {
                 for (susNote in 0...roundSus)
                 {
-                    oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
+                    // Безопасное получение oldNote
+                    var idx:Int = unspawnNotes.length - 1;
+                    if (idx >= 0 && unspawnNotes[idx] != null)
+                        oldNote = unspawnNotes[idx];
 
                     var sustainNote:Note = new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true);
                     sustainNote.isSustainEnd = (susNote == roundSus - 1);
@@ -2636,7 +2636,6 @@ private function generateSong():Void
                     sustainNote.scrollFactor.set();
                     sustainNote.parent = swagNote;
                     
-                    // Сустейны всегда через временный массив
                     tempSustainNotes.push(sustainNote);
                     swagNote.tail.push(sustainNote);
                     sustainNoteCnt++;
@@ -2644,7 +2643,7 @@ private function generateSong():Void
                     sustainNote.correctionOffset = swagNote.height / 2;
                     if(!PlayState.isPixelStage)
                     {
-                        if(oldNote.isSustainNote)
+                        if(oldNote != null && oldNote.isSustainNote)
                         {
                             oldNote.scale.y *= Note.SUSTAIN_SIZE / oldNote.frameHeight;
                             oldNote.scale.y /= playbackRate;
@@ -2653,7 +2652,7 @@ private function generateSong():Void
                         if(ClientPrefs.data.downScroll)
                             sustainNote.correctionOffset = 0;
                     }
-                    else if(oldNote.isSustainNote)
+                    else if(oldNote != null && oldNote.isSustainNote)
                     {
                         oldNote.scale.y /= playbackRate;
                         oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
@@ -2692,14 +2691,12 @@ private function generateSong():Void
         }
     }
 
-    // Merge сустейнов в основной массив
     for (sustain in tempSustainNotes)
         unspawnNotes.push(sustain);
     tempSustainNotes.resize(0);
 
     var loadTime:Float = Date.now().getTime() - loadStartTime;
 
-    // ===== ТРЕЙСЫ =====
     trace('\n[ --- "${SONG.song.toUpperCase()}" CHART INFO --- ]');
     trace('Regular Notes: $regularNoteCnt');
     trace('Sustain Notes: $sustainNoteCnt');
@@ -2707,7 +2704,6 @@ private function generateSong():Void
     trace('Ghost Notes Cleared: $ghostNotesCaught');
     trace('FastLoad: ${useFastLoad ? "ENABLED" : "DISABLED"}');
     trace('Load Time: ${loadTime}ms');
-    trace('Average: ${Math.round((regularNoteCnt + sustainNoteCnt) / (loadTime / 1000))} notes/sec');
 
     for (event in songData.events)
         for (i in 0...event[1].length)

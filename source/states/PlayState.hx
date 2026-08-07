@@ -2541,29 +2541,15 @@ private function generateSong():Void
     var ghostNotesCaught:Int = 0;
     var daBpm:Float = Conductor.bpm;
     var generatedNoteHeads:Map<String, Note> = [];
+    var loadStartTime:Float = Date.now().getTime();
 
     function noteHeadKey(strumTime:Float, noteColumn:Int, mustPress:Bool, noteType:String):String
     {
         return Std.string(strumTime) + '|' + noteColumn + '|' + (mustPress ? '1' : '0') + '|' + (noteType == null ? '' : noteType);
     }
 
-    var useFastLoad:Bool = ClientPrefs.data.fastLoadSong;
-    var loadStartTime:Float = Date.now().getTime();
-    var sustainNoteCnt:Int = 0;
     var regularNoteCnt:Int = 0;
-    
-    if (useFastLoad)
-    {
-        var totalRegularNotes:Int = 0;
-        for (section in sectionsData)
-            totalRegularNotes += section.sectionNotes.length;
-        
-        unspawnNotes.resize(totalRegularNotes);
-        trace('FastLoad: Pre-allocated $totalRegularNotes slots for notes');
-    }
-
-    var noteIndex:Int = 0;
-    var tempSustainNotes:Array<Note> = [];
+    var sustainNoteCnt:Int = 0;
 
     for (section in sectionsData)
     {
@@ -2607,11 +2593,7 @@ private function generateSong():Void
             swagNote.noteType = noteType;
             swagNote.scrollFactor.set();
             
-            if (useFastLoad)
-                unspawnNotes[noteIndex++] = swagNote;
-            else
-                unspawnNotes.push(swagNote);
-            
+            unspawnNotes.push(swagNote);
             regularNoteCnt++;
             generatedNoteHeads.set(noteKey, swagNote);
 
@@ -2621,10 +2603,7 @@ private function generateSong():Void
             {
                 for (susNote in 0...roundSus)
                 {
-                    // Безопасное получение oldNote
-                    var idx:Int = unspawnNotes.length - 1;
-                    if (idx >= 0 && unspawnNotes[idx] != null)
-                        oldNote = unspawnNotes[idx];
+                    oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
 
                     var sustainNote:Note = new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true);
                     sustainNote.isSustainEnd = (susNote == roundSus - 1);
@@ -2635,15 +2614,14 @@ private function generateSong():Void
                     sustainNote.isOpponentMode = swagNote.isOpponentMode;
                     sustainNote.scrollFactor.set();
                     sustainNote.parent = swagNote;
-                    
-                    tempSustainNotes.push(sustainNote);
+                    unspawnNotes.push(sustainNote);
                     swagNote.tail.push(sustainNote);
                     sustainNoteCnt++;
 
                     sustainNote.correctionOffset = swagNote.height / 2;
                     if(!PlayState.isPixelStage)
                     {
-                        if(oldNote != null && oldNote.isSustainNote)
+                        if(oldNote.isSustainNote)
                         {
                             oldNote.scale.y *= Note.SUSTAIN_SIZE / oldNote.frameHeight;
                             oldNote.scale.y /= playbackRate;
@@ -2652,7 +2630,7 @@ private function generateSong():Void
                         if(ClientPrefs.data.downScroll)
                             sustainNote.correctionOffset = 0;
                     }
-                    else if(oldNote != null && oldNote.isSustainNote)
+                    else if(oldNote.isSustainNote)
                     {
                         oldNote.scale.y /= playbackRate;
                         oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
@@ -2691,10 +2669,6 @@ private function generateSong():Void
         }
     }
 
-    for (sustain in tempSustainNotes)
-        unspawnNotes.push(sustain);
-    tempSustainNotes.resize(0);
-
     var loadTime:Float = Date.now().getTime() - loadStartTime;
 
     trace('\n[ --- "${SONG.song.toUpperCase()}" CHART INFO --- ]');
@@ -2702,7 +2676,6 @@ private function generateSong():Void
     trace('Sustain Notes: $sustainNoteCnt');
     trace('Total Notes: ${regularNoteCnt + sustainNoteCnt}');
     trace('Ghost Notes Cleared: $ghostNotesCaught');
-    trace('FastLoad: ${useFastLoad ? "ENABLED" : "DISABLED"}');
     trace('Load Time: ${loadTime}ms');
 
     for (event in songData.events)

@@ -185,7 +185,12 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			STRING,
 			['Psych', 'Codename']);
 		addOption(option);
-
+		
+var option:Option = new Option('Fast Song Loading',
+    'If checked, pre-allocates memory for faster song loading.\nDisable if mods have issues with song loading.',
+    'fastLoadSong',
+    BOOL);
+addOption(option);
 		super();
 	}
 

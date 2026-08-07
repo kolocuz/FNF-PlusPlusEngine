@@ -2450,251 +2450,281 @@ class PlayState extends MusicBeatState
 	private var eventsPushed:Array<String> = [];
 	private var totalColumns: Int = 4;
 
-	private function generateSong():Void
-	{
-		// FlxG.log.add(ChartParser.parse());
-		songSpeed = PlayState.SONG.speed;
-		songSpeedType = ClientPrefs.getGameplaySetting('scrolltype');
-		switch(songSpeedType)
-		{
-			case "multiplicative":
-				songSpeed = SONG.speed * ClientPrefs.getGameplaySetting('scrollspeed');
-			case "constant":
-				songSpeed = ClientPrefs.getGameplaySetting('scrollspeed');
-		}
+private function generateSong():Void
+{
+    songSpeed = PlayState.SONG.speed;
+    songSpeedType = ClientPrefs.getGameplaySetting('scrolltype');
+    switch(songSpeedType)
+    {
+        case "multiplicative":
+            songSpeed = SONG.speed * ClientPrefs.getGameplaySetting('scrollspeed');
+        case "constant":
+            songSpeed = ClientPrefs.getGameplaySetting('scrollspeed');
+    }
 
-		var songData = SONG;
-		Conductor.bpm = songData.bpm;
+    var songData = SONG;
+    Conductor.bpm = songData.bpm;
+    curSong = songData.song;
 
-		curSong = songData.song;
+    vocals = new FlxSound();
+    opponentVocals = new FlxSound();
+    try
+    {
+        if (songData.needsVoices)
+        {
+            var playerVocals = Paths.voices(songData.song, (boyfriend.vocalsFile == null || boyfriend.vocalsFile.length < 1) ? 'Player' : boyfriend.vocalsFile);
+            vocals.loadEmbedded(playerVocals != null ? playerVocals : Paths.voices(songData.song));
+            
+            var oppVocals = Paths.voices(songData.song, (dad.vocalsFile == null || dad.vocalsFile.length < 1) ? 'Opponent' : dad.vocalsFile);
+            if(oppVocals != null && oppVocals.length > 0) opponentVocals.loadEmbedded(oppVocals);
+        }
+    }
+    catch (e:Dynamic) {}
 
-		vocals = new FlxSound();
-		opponentVocals = new FlxSound();
-		try
-		{
-			if (songData.needsVoices)
-			{
-				var playerVocals = Paths.voices(songData.song, (boyfriend.vocalsFile == null || boyfriend.vocalsFile.length < 1) ? 'Player' : boyfriend.vocalsFile);
-				vocals.loadEmbedded(playerVocals != null ? playerVocals : Paths.voices(songData.song));
-				
-				var oppVocals = Paths.voices(songData.song, (dad.vocalsFile == null || dad.vocalsFile.length < 1) ? 'Opponent' : dad.vocalsFile);
-				if(oppVocals != null && oppVocals.length > 0) opponentVocals.loadEmbedded(oppVocals);
-			}
-		}
-		catch (e:Dynamic) {}
+    #if FLX_PITCH
+    vocals.pitch = playbackRate;
+    opponentVocals.pitch = playbackRate;
+    #end
+    FlxG.sound.list.add(vocals);
+    FlxG.sound.list.add(opponentVocals);
 
-		#if FLX_PITCH
-		vocals.pitch = playbackRate;
-		opponentVocals.pitch = playbackRate;
-		#end
-		FlxG.sound.list.add(vocals);
-		FlxG.sound.list.add(opponentVocals);
+    inst = new FlxSound();
+    try
+    {
+        if (customAudioPath != null)
+        {
+            #if sys
+            var oggFile:String = null;
+            if (sys.FileSystem.exists(customAudioPath))
+            {
+                for (file in sys.FileSystem.readDirectory(customAudioPath))
+                {
+                    if (file.toLowerCase().endsWith('.ogg'))
+                    {
+                        oggFile = file;
+                        break;
+                    }
+                }
+            }
+            if (oggFile != null)
+                inst.loadEmbedded(openfl.media.Sound.fromFile(customAudioPath + oggFile));
+            else
+            {
+                trace('No .ogg file found in: $customAudioPath');
+                inst.loadEmbedded(Paths.inst(songData.song));
+            }
+            #else
+            inst.loadEmbedded(Paths.inst(songData.song));
+            #end
+        }
+        else
+            inst.loadEmbedded(Paths.inst(songData.song));
+    }
+    catch (e:Dynamic) {}
+    FlxG.sound.list.add(inst);
 
-		inst = new FlxSound();
-		try
-		{
-			// Si hay una ruta de audio personalizada (StepMania), cargar desde ahí
-			if (customAudioPath != null)
-			{
-				#if sys
-				// Buscar cualquier archivo .ogg en la carpeta
-				var oggFile:String = null;
-				if (sys.FileSystem.exists(customAudioPath))
-				{
-					for (file in sys.FileSystem.readDirectory(customAudioPath))
-					{
-						if (file.toLowerCase().endsWith('.ogg'))
-						{
-							oggFile = file;
-							break;
-						}
-					}
-				}
-				
-				if (oggFile != null)
-				{
-					var instPath = customAudioPath + oggFile;
-					inst.loadEmbedded(openfl.media.Sound.fromFile(instPath));
-				}
-				else
-				{
-					trace('No .ogg file found in: $customAudioPath');
-					inst.loadEmbedded(Paths.inst(songData.song));
-				}
-				#else
-				inst.loadEmbedded(Paths.inst(songData.song));
-				#end
-			}
-			else
-			{
-				inst.loadEmbedded(Paths.inst(songData.song));
-			}
-		}
-		catch (e:Dynamic) {}
-		FlxG.sound.list.add(inst);
+    notes = new FlxTypedGroup<Note>();
+    noteGroup.add(notes);
 
-		notes = new FlxTypedGroup<Note>();
-		noteGroup.add(notes);
+    try
+    {
+        var eventsChart:SwagSong = Song.getChart('events', songName);
+        if(eventsChart != null)
+            for (event in eventsChart.events)
+                for (i in 0...event[1].length)
+                    makeEvent(event, i);
+    }
+    catch(e:Dynamic) {}
 
-		try
-		{
-			var eventsChart:SwagSong = Song.getChart('events', songName);
-			if(eventsChart != null)
-				for (event in eventsChart.events) //Event Notes
-					for (i in 0...event[1].length)
-						makeEvent(event, i);
-		}
-		catch(e:Dynamic) {}
+    var oldNote:Note = null;
+    var sectionsData:Array<SwagSection> = PlayState.SONG.notes;
+    var ghostNotesCaught:Int = 0;
+    var daBpm:Float = Conductor.bpm;
+    var generatedNoteHeads:Map<String, Note> = [];
 
-		var oldNote:Note = null;
-		var sectionsData:Array<SwagSection> = PlayState.SONG.notes;
-		var ghostNotesCaught:Int = 0;
-		var daBpm:Float = Conductor.bpm;
-		var generatedNoteHeads:Map<String, Note> = [];
+    function noteHeadKey(strumTime:Float, noteColumn:Int, mustPress:Bool, noteType:String):String
+    {
+        return Std.string(strumTime) + '|' + noteColumn + '|' + (mustPress ? '1' : '0') + '|' + (noteType == null ? '' : noteType);
+    }
 
-		function noteHeadKey(strumTime:Float, noteColumn:Int, mustPress:Bool, noteType:String):String
-		{
-			return Std.string(strumTime) + '|' + noteColumn + '|' + (mustPress ? '1' : '0') + '|' + (noteType == null ? '' : noteType);
-		}
-	
-		for (section in sectionsData)
-		{
-			if (section.changeBPM != null && section.changeBPM && section.bpm != null && daBpm != section.bpm)
-				daBpm = section.bpm;
+    // ===== FAST LOAD: Pre-count & Pre-allocate =====
+    var useFastLoad:Bool = ClientPrefs.data.fastLoadSong;
+    var loadStartTime:Float = Date.now().getTime();
+    var sustainNoteCnt:Int = 0;
+    var regularNoteCnt:Int = 0;
+    
+    if (useFastLoad)
+    {
+        // Первый проход: считаем обычные ноты
+        var totalRegularNotes:Int = 0;
+        for (section in sectionsData)
+            totalRegularNotes += section.sectionNotes.length;
+        
+        unspawnNotes.resize(totalRegularNotes);
+        trace('FastLoad: Pre-allocated $totalRegularNotes slots for notes');
+    }
 
-			for (i in 0...section.sectionNotes.length)
-			{
-				final songNotes: Array<Dynamic> = section.sectionNotes[i];
-				var spawnTime: Float = songNotes[0];
-				var noteColumn: Int = Std.int(songNotes[1] % totalColumns);
-				var holdLength: Float = songNotes[2];
-				var noteType: String = !Std.isOfType(songNotes[3], String) ? Note.defaultNoteTypes[songNotes[3]] : songNotes[3];
-				if (Math.isNaN(holdLength))
-					holdLength = 0.0;
+    var noteIndex:Int = 0;
+    var tempSustainNotes:Array<Note> = []; // Временный массив для сустейнов
 
-				var gottaHitNote:Bool = (songNotes[1] < totalColumns);
-				var mustPress:Bool = playOpponent ? !gottaHitNote : gottaHitNote;
-				var noteKey:String = noteHeadKey(spawnTime, noteColumn, mustPress, noteType);
-				var evilNote:Note = generatedNoteHeads.get(noteKey);
-				if (evilNote != null)
-				{
-					if (evilNote.tail.length > 0)
-						for (tail in evilNote.tail)
-						{
-							tail.destroy();
-							unspawnNotes.remove(tail);
-						}
-					evilNote.destroy();
-					unspawnNotes.remove(evilNote);
-					generatedNoteHeads.remove(noteKey);
-					ghostNotesCaught++;
-				}
+    for (section in sectionsData)
+    {
+        if (section.changeBPM != null && section.changeBPM && section.bpm != null && daBpm != section.bpm)
+            daBpm = section.bpm;
 
-				var swagNote:Note = new Note(spawnTime, noteColumn, oldNote);
-				var isAlt: Bool = section.altAnim && !gottaHitNote;
-				swagNote.gfNote = (section.gfSection && gottaHitNote == section.mustHitSection);
-				swagNote.animSuffix = isAlt ? "-alt" : "";
-				
-				// Opponent Mode: Invierte quien debe tocar la nota
-				swagNote.mustPress = mustPress;
-				swagNote.isOpponentMode = playOpponent; // Marcar si está en Opponent Mode
-				
-				swagNote.sustainLength = holdLength;
-				swagNote.noteType = noteType;
-	
-				swagNote.scrollFactor.set();
-				unspawnNotes.push(swagNote);
-				generatedNoteHeads.set(noteKey, swagNote);
+        for (i in 0...section.sectionNotes.length)
+        {
+            final songNotes:Array<Dynamic> = section.sectionNotes[i];
+            var spawnTime:Float = songNotes[0];
+            var noteColumn:Int = Std.int(songNotes[1] % totalColumns);
+            var holdLength:Float = songNotes[2];
+            var noteType:String = !Std.isOfType(songNotes[3], String) ? Note.defaultNoteTypes[songNotes[3]] : songNotes[3];
+            if (Math.isNaN(holdLength)) holdLength = 0.0;
 
-				var curStepCrochet:Float = 60 / daBpm * 1000 / 4.0;
-				final roundSus:Int = Math.round(swagNote.sustainLength / curStepCrochet);
-				if(roundSus > 0)
-				{
-					for (susNote in 0...roundSus)
-					{
-						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
+            var gottaHitNote:Bool = (songNotes[1] < totalColumns);
+            var mustPress:Bool = playOpponent ? !gottaHitNote : gottaHitNote;
+            var noteKey:String = noteHeadKey(spawnTime, noteColumn, mustPress, noteType);
+            var evilNote:Note = generatedNoteHeads.get(noteKey);
+            if (evilNote != null)
+            {
+                if (evilNote.tail.length > 0)
+                    for (tail in evilNote.tail)
+                    {
+                        tail.destroy();
+                        unspawnNotes.remove(tail);
+                    }
+                evilNote.destroy();
+                unspawnNotes.remove(evilNote);
+                generatedNoteHeads.remove(noteKey);
+                ghostNotesCaught++;
+            }
 
-						var sustainNote:Note = new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true);
-						sustainNote.isSustainEnd = (susNote == roundSus - 1);
-						sustainNote.animSuffix = swagNote.animSuffix;
-						sustainNote.mustPress = swagNote.mustPress;
-						sustainNote.gfNote = swagNote.gfNote;
-						sustainNote.noteType = swagNote.noteType;
-						sustainNote.isOpponentMode = swagNote.isOpponentMode;
-						sustainNote.scrollFactor.set();
-						sustainNote.parent = swagNote;
-						unspawnNotes.push(sustainNote);
-						swagNote.tail.push(sustainNote);
+            var swagNote:Note = new Note(spawnTime, noteColumn, oldNote);
+            var isAlt:Bool = section.altAnim && !gottaHitNote;
+            swagNote.gfNote = (section.gfSection && gottaHitNote == section.mustHitSection);
+            swagNote.animSuffix = isAlt ? "-alt" : "";
+            swagNote.mustPress = mustPress;
+            swagNote.isOpponentMode = playOpponent;
+            swagNote.sustainLength = holdLength;
+            swagNote.noteType = noteType;
+            swagNote.scrollFactor.set();
+            
+            // FastLoad: прямое присваивание | Normal: push
+            if (useFastLoad)
+                unspawnNotes[noteIndex++] = swagNote;
+            else
+                unspawnNotes.push(swagNote);
+            
+            regularNoteCnt++;
+            generatedNoteHeads.set(noteKey, swagNote);
 
-						sustainNote.correctionOffset = swagNote.height / 2;
-						if(!PlayState.isPixelStage)
-						{
-							if(oldNote.isSustainNote)
-							{
-								oldNote.scale.y *= Note.SUSTAIN_SIZE / oldNote.frameHeight;
-								oldNote.scale.y /= playbackRate;
-								oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
-							}
+            var curStepCrochet:Float = 60 / daBpm * 1000 / 4.0;
+            final roundSus:Int = Math.round(swagNote.sustainLength / curStepCrochet);
+            if(roundSus > 0)
+            {
+                for (susNote in 0...roundSus)
+                {
+                    oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
 
-							if(ClientPrefs.data.downScroll)
-								sustainNote.correctionOffset = 0;
-						}
-						else if(oldNote.isSustainNote)
-						{
-							oldNote.scale.y /= playbackRate;
-							oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
-						}
+                    var sustainNote:Note = new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true);
+                    sustainNote.isSustainEnd = (susNote == roundSus - 1);
+                    sustainNote.animSuffix = swagNote.animSuffix;
+                    sustainNote.mustPress = swagNote.mustPress;
+                    sustainNote.gfNote = swagNote.gfNote;
+                    sustainNote.noteType = swagNote.noteType;
+                    sustainNote.isOpponentMode = swagNote.isOpponentMode;
+                    sustainNote.scrollFactor.set();
+                    sustainNote.parent = swagNote;
+                    
+                    // Сустейны всегда через временный массив
+                    tempSustainNotes.push(sustainNote);
+                    swagNote.tail.push(sustainNote);
+                    sustainNoteCnt++;
 
-						sustainNote.x += getGameplaySafeX();
-						if (sustainNote.mustPress) sustainNote.x += getGameplaySafeWidth() / 2; // general offset
-						else if(ClientPrefs.data.middleScroll)
-						{
-							sustainNote.x += 310;
-							if(noteColumn > 1) //Up and Right
-								sustainNote.x += getGameplaySafeWidth() / 2 + 25;
-						}
-					}
-				}
+                    sustainNote.correctionOffset = swagNote.height / 2;
+                    if(!PlayState.isPixelStage)
+                    {
+                        if(oldNote.isSustainNote)
+                        {
+                            oldNote.scale.y *= Note.SUSTAIN_SIZE / oldNote.frameHeight;
+                            oldNote.scale.y /= playbackRate;
+                            oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
+                        }
+                        if(ClientPrefs.data.downScroll)
+                            sustainNote.correctionOffset = 0;
+                    }
+                    else if(oldNote.isSustainNote)
+                    {
+                        oldNote.scale.y /= playbackRate;
+                        oldNote.resizeByRatio(curStepCrochet / Conductor.stepCrochet);
+                    }
 
-				if (swagNote.mustPress)
-				{
-					swagNote.x += getGameplaySafeX();
-					swagNote.x += getGameplaySafeWidth() / 2; // general offset
-				}
-				else
-				{
-					swagNote.x += getGameplaySafeX();
-					if(ClientPrefs.data.middleScroll)
-					{
-						swagNote.x += 310;
-						if(noteColumn > 1) //Up and Right
-						{
-							swagNote.x += getGameplaySafeWidth() / 2 + 25;
-						}
-					}
-				}
-				if(!noteTypes.contains(swagNote.noteType))
-					noteTypes.push(swagNote.noteType);
+                    sustainNote.x += getGameplaySafeX();
+                    if (sustainNote.mustPress) sustainNote.x += getGameplaySafeWidth() / 2;
+                    else if(ClientPrefs.data.middleScroll)
+                    {
+                        sustainNote.x += 310;
+                        if(noteColumn > 1)
+                            sustainNote.x += getGameplaySafeWidth() / 2 + 25;
+                    }
+                }
+            }
 
-				oldNote = swagNote;
-			}
-		}
-		trace('["${SONG.song.toUpperCase()}" CHART INFO]: Ghost Notes Cleared: $ghostNotesCaught');
-		for (event in songData.events) //Event Notes
-			for (i in 0...event[1].length)
-				makeEvent(event, i);
+            if (swagNote.mustPress)
+            {
+                swagNote.x += getGameplaySafeX();
+                swagNote.x += getGameplaySafeWidth() / 2;
+            }
+            else
+            {
+                swagNote.x += getGameplaySafeX();
+                if(ClientPrefs.data.middleScroll)
+                {
+                    swagNote.x += 310;
+                    if(noteColumn > 1)
+                        swagNote.x += getGameplaySafeWidth() / 2 + 25;
+                }
+            }
+            if(!noteTypes.contains(swagNote.noteType))
+                noteTypes.push(swagNote.noteType);
 
-		unspawnNotes.sort(sortByTime);
-		
-		generatedMusic = true;
-		
-		totalNotes = 0;
-		for (note in unspawnNotes)
-		{
-			if (!note.isSustainNote && note.mustPress)
-				totalNotes++;
-		}
-	}
+            oldNote = swagNote;
+        }
+    }
+
+    // Merge сустейнов в основной массив
+    for (sustain in tempSustainNotes)
+        unspawnNotes.push(sustain);
+    tempSustainNotes.resize(0);
+
+    var loadTime:Float = Date.now().getTime() - loadStartTime;
+
+    // ===== ТРЕЙСЫ =====
+    trace('\n[ --- "${SONG.song.toUpperCase()}" CHART INFO --- ]');
+    trace('Regular Notes: $regularNoteCnt');
+    trace('Sustain Notes: $sustainNoteCnt');
+    trace('Total Notes: ${regularNoteCnt + sustainNoteCnt}');
+    trace('Ghost Notes Cleared: $ghostNotesCaught');
+    trace('FastLoad: ${useFastLoad ? "ENABLED" : "DISABLED"}');
+    trace('Load Time: ${loadTime}ms');
+    trace('Average: ${Math.round((regularNoteCnt + sustainNoteCnt) / (loadTime / 1000))} notes/sec');
+
+    for (event in songData.events)
+        for (i in 0...event[1].length)
+            makeEvent(event, i);
+
+    unspawnNotes.sort(sortByTime);
+    generatedMusic = true;
+
+    totalNotes = 0;
+    for (note in unspawnNotes)
+    {
+        if (!note.isSustainNote && note.mustPress)
+            totalNotes++;
+    }
+    
+    trace('Ready to PLAY!');
+}
 
 	// called only once per different event (Used for precaching)
 	function eventPushed(event:EventNote) {

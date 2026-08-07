@@ -90,7 +90,6 @@ import states.TitleState;
 	public var holdAlphaDivisions:Int = 20; // Pre-calculated alpha variants (10-30)
 	public var columnSpecificModifiers:Bool = true; // Enables per-lane modifier calculations
 	public var modchartDebug:Bool = false; // Shows the NotITG-style modchart debug overlay
-	public var fastLoadSong:Bool = true;
 	
 	public var noteOffset:Int = 0;
 	public var arrowRGB:Array<Array<FlxColor>> = [

@@ -3,6 +3,8 @@ package backend;
 import openfl.events.UncaughtErrorEvent;
 import openfl.events.ErrorEvent;
 import openfl.errors.Error;
+import flixel.FlxG;
+import flixel.util.FlxColor;
 #if sys
 import sys.FileSystem;
 import sys.io.File;
@@ -11,58 +13,9 @@ import sys.io.File;
 using StringTools;
 using flixel.util.FlxArrayUtil;
 
-/**
- * Crash Handler.
- * @author YoshiCrafter29, Ne_Eo, MAJigsaw77 and Homura Akemi (HomuHomu833)
- */
 class CrashHandler
 {
-	// Help link/repository to display in the event of a crash
-	public static final HELP_LINK:String = "https://github.com/LeninAsto/FNF-PlusEngine";
-	
-	// Fun error messages for null references
-	static final NULL_ERROR_MESSAGES:Array<String> = [
-		"Oops! The code gods are not pleased... null reference found!",
-		"Houston, we have a null problem!",
-		"Error 404: Object not found (it's just null)",
-		"Congrats! You've discovered the void! (null)",
-		"The object decided to take a vacation (null)",
-		"*sad trombone* null happened",
-		"Null? More like... not cool!",
-		"The object went to buy cigarettes and never came back (null)",
-		"Achievement Unlocked: Find a null reference!",
-		"Null references are stored in the balls",
-		"Bruh moment: null reference detected",
-		"Skill issue: you tried to use a null object",
-		"The object said 'aight imma head out' (null)",
-		"Error: object.exe has stopped working (null)",
-		"Congratulations, you broke it! (null reference)",
-		"The object is on a date with undefined (null)",
-		"Null reference? In MY engine? It's more likely than you think",
-		"Object not found. Did you check under the couch? (null)"
-	];
-	
-	/**
-	 * Adds a funny prefix to null-related error messages
-	 */
-	static function funnyNullMessage(originalMessage:String):String
-	{
-		if (originalMessage == null) return "Null error message (ironic, isn't it?)";
-		
-		var lowerMsg = originalMessage.toLowerCase();
-		var isNullError = lowerMsg.contains("null") || 
-		                  lowerMsg.contains("object reference") || 
-		                  lowerMsg.contains("null pointer") ||
-		                  lowerMsg.contains("null object");
-		
-		if (isNullError)
-		{
-			var funnyMsg = NULL_ERROR_MESSAGES[Std.random(NULL_ERROR_MESSAGES.length)];
-			return '$funnyMsg';
-		}
-		
-		return originalMessage;
-	}
+	public static final HELP_LINK:String = "https://github.com/kolocuz/FNF-PlusPlusEngine";
 	
 	public static function init():Void
 	{
@@ -92,12 +45,8 @@ class CrashHandler
 			m = '${err.text}';
 		}
 		
-		// Add funny message for null errors
-		m = funnyNullMessage(m);
-		
 		var stack = haxe.CallStack.exceptionStack();
 		var stackLabelArr:Array<String> = [];
-		var stackLabel:String = "";
 		for (e in stack)
 		{
 			switch (e)
@@ -120,20 +69,32 @@ class CrashHandler
 					stackLabelArr.push('${cl} - ${m}');
 			}
 		}
-		stackLabel = stackLabelArr.join('\r\n');
-
-		// Display the error in the console/terminal
-		trace('\n\n$m\n\n$stackLabel\n======================\nFor help, visit: $HELP_LINK');
+		var stackLabel = stackLabelArr.join('\n');
+		
+		trace('\n========== ERROR ==========');
+		trace(m);
+		trace(stackLabel);
+		trace('============================');
 		
 		#if sys
-		saveErrorMessage('$m\n$stackLabel');
+		saveErrorMessage('$m\n\n$stackLabel');
 		#end
-
-		// Message with a help link
-		var errorMsg = '$m\n\n$stackLabel\n\n========================\nNeed help? Visit:\n$HELP_LINK';
-		CoolUtil.showPopUp(errorMsg, "Error!");
-		#if DISCORD_ALLOWED DiscordClient.shutdown(); #end
-		lime.system.System.exit(1);
+		
+		var shortError = m;
+		if (shortError.length > 300) shortError = shortError.substr(0, 300) + '...';
+		
+		var popupMsg = 'ERROR!\n\n' +
+		               shortError + '\n\n' +
+		               'Game will continue, but something went wrong.\n' +
+		               'Check console for details.\n\n' +
+		               'Help: $HELP_LINK';
+		
+		CoolUtil.showPopUp(popupMsg, "Error");
+		
+		if (PlayState.instance != null)
+		{
+			PlayState.instance.addTextToDebug('ERROR: $m', FlxColor.RED);
+		}
 	}
 
 	#if (cpp || hl)
@@ -143,30 +104,31 @@ class CrashHandler
 
 		if (message != null && message.length > 0)
 		{
-			// Add funny message for null errors
-			var funnyMessage = funnyNullMessage(Std.string(message));
-			log.push(funnyMessage);
+			log.push(Std.string(message));
 		}
 
 		log.push(haxe.CallStack.toString(haxe.CallStack.exceptionStack(true)));
 		
 		var errorLog = log.join('\n');
 		
-		// Display the error in the console/terminal
-		trace('=== CRITICAL ERROR ===');
+		trace('\n========== CRITICAL ERROR ==========');
 		trace(errorLog);
-		trace('======================');
-		trace('For help, visit: $HELP_LINK');
-
+		trace('======================================');
+		
 		#if sys
 		saveErrorMessage(errorLog);
 		#end
-
-		// Message with a help link
-		var errorMsg = '$errorLog\n\n========================\nNeed help? Visit:\n$HELP_LINK';
-		CoolUtil.showPopUp(errorMsg, "Critical Error!");
-		#if DISCORD_ALLOWED DiscordClient.shutdown(); #end
-		lime.system.System.exit(1);
+		
+		var shortError = Std.string(message);
+		if (shortError.length > 300) shortError = shortError.substr(0, 300) + '...';
+		
+		var popupMsg = 'CRITICAL ERROR!\n\n' +
+		               shortError + '\n\n' +
+		               'Game will try to continue.\n' +
+		               'Check console for details.\n\n' +
+		               'Help: $HELP_LINK';
+		
+		CoolUtil.showPopUp(popupMsg, "Critical Error");
 	}
 	#end
 
@@ -180,8 +142,9 @@ class CrashHandler
 			if (!FileSystem.exists(folder))
 				FileSystem.createDirectory(folder);
 
+			var date = Date.now().toString().replace(' ', '-').replace(':', "'");
 			var fullLog = message + '\n\n========================\nFor help, visit: $HELP_LINK\n========================';
-			File.saveContent(folder + Date.now().toString().replace(' ', '-').replace(':', "'") + '.txt', fullLog);
+			File.saveContent(folder + date + '.txt', fullLog);
 		}
 		catch (e:haxe.Exception)
 			trace('Couldn\'t save error message. (${e.message})');

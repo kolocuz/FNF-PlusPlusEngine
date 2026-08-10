@@ -1034,27 +1034,69 @@ class PlayState extends MusicBeatState
 			}
 			#end
 		}
-		else // Para canciones normales, buscar en data/
-		{
-			for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'data/$songName/'))
-				#if linux
-				for (file in CoolUtil.sortAlphabetically(Paths.readDirectory(folder)))
-				#else
-				for (file in Paths.readDirectory(folder))
-				#end
-				{
-					#if LUA_ALLOWED
-					if(file.toLowerCase().endsWith('.lua'))
-						new FunkinLua(folder + file);
-					#end
-
-					#if HSCRIPT_ALLOWED
-					if(file.toLowerCase().endsWith('.hx'))
-						initHScript(folder + file);
-					#end
-				}
-		}
-		#end
+else
+{
+    var songPathLower:String = songName.toLowerCase();
+    var loadedAnyScript:Bool = false;
+    
+    #if MODS_ALLOWED
+    var modsList:Array<String> = Mods.getModDirectories();
+    
+    for (modFolder in modsList)
+    {
+        var pathsToTry:Array<String> = [
+            modFolder + 'data/' + songPathLower + '/',
+            modFolder + 'data/' + songName + '/',
+            modFolder + 'data/' + songPathLower.charAt(0).toUpperCase() + songPathLower.substr(1) + '/',
+            modFolder + 'data/' + songPathLower.toUpperCase() + '/'
+        ];
+        
+        var uniquePaths:Array<String> = [];
+        for (path in pathsToTry)
+        {
+            if (uniquePaths.indexOf(path) == -1)
+                uniquePaths.push(path);
+        }
+        
+        for (path in uniquePaths)
+        {
+            #if sys
+            if (sys.FileSystem.exists(path) && sys.FileSystem.isDirectory(path))
+            #else
+            if (AssetLoader.exists(path, DIRECTORY))
+            #end
+            {
+                #if sys
+                var files:Array<String> = sys.FileSystem.readDirectory(path);
+                #else
+                var files:Array<String> = Paths.readDirectory(path);
+                #end
+                
+                for (file in files)
+                {
+                    var fullPath:String = path + file;
+                    
+                    #if LUA_ALLOWED
+                    if (file.toLowerCase().endsWith('.lua'))
+                    {
+                        new FunkinLua(fullPath);
+                        loadedAnyScript = true;
+                    }
+                    #end
+                    
+                    #if HSCRIPT_ALLOWED
+                    if (file.toLowerCase().endsWith('.hx'))
+                    {
+                        initHScript(fullPath);
+                        loadedAnyScript = true;
+                    }
+                    #end
+                }
+            }
+        }
+    }
+    #end
+}
 		
 		addMobileControls();
 		mobileControls.instance.visible = true;

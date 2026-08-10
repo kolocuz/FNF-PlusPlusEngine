@@ -742,7 +742,7 @@ class PlayState extends MusicBeatState
 				add(boyfriendGroup);
 			}
 		}
-		
+		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
 		// "SCRIPTS FOLDER" SCRIPTS
 		for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'scripts/'))
 			#if linux
@@ -776,7 +776,6 @@ class PlayState extends MusicBeatState
 				gf.visible = false;
 		}
 		
-		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
 		// STAGE SCRIPTS
 		#if LUA_ALLOWED startLuasNamed('stages/' + curStage + '.lua'); #end
 		#if HSCRIPT_ALLOWED startHScriptsNamed('stages/' + curStage + '.hx'); #end

@@ -743,7 +743,6 @@ class PlayState extends MusicBeatState
 			}
 		}
 		
-		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
 		// "SCRIPTS FOLDER" SCRIPTS
 		for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'scripts/'))
 			#if linux

@@ -3,28 +3,30 @@ package psychlua;
 
 class LegacyCompatFunctions
 {
+	public static var enableWarnings:Bool = false;
+
 	public static function implement(funk:FunkinLua)
 	{
 		var lua:State = funk.lua;
 
 		Lua_helper.add_callback(lua, "getScore", function() {
-			StructurePsychOld.warnLegacyLuaUsage('getScore()', "getProperty('songScore')");
+			if (enableWarnings) StructurePsychOld.warnLegacyLuaUsage('getScore()', "getProperty('songScore')");
 			var game:PlayState = PlayState.instance;
 			return game != null ? game.songScore : 0;
 		});
 		Lua_helper.add_callback(lua, "getMisses", function() {
-			StructurePsychOld.warnLegacyLuaUsage('getMisses()', "getProperty('songMisses')");
+			if (enableWarnings) StructurePsychOld.warnLegacyLuaUsage('getMisses()', "getProperty('songMisses')");
 			var game:PlayState = PlayState.instance;
 			return game != null ? game.songMisses : 0;
 		});
 		Lua_helper.add_callback(lua, "getHits", function() {
-			StructurePsychOld.warnLegacyLuaUsage('getHits()', "getProperty('songHits')");
+			if (enableWarnings) StructurePsychOld.warnLegacyLuaUsage('getHits()', "getProperty('songHits')");
 			var game:PlayState = PlayState.instance;
 			return game != null ? game.songHits : 0;
 		});
 
 		Lua_helper.add_callback(lua, "changePresence", function(details:String = 'In the Menus', ?state:String, ?smallImageKey:String, ?hasStartTimestamp:Bool = false, ?endTimestamp:Float = 0) {
-			StructurePsychOld.warnLegacyLuaUsage('changePresence(...)', 'changeDiscordPresence(...)');
+			if (enableWarnings) StructurePsychOld.warnLegacyLuaUsage('changePresence(...)', 'changeDiscordPresence(...)');
 			#if DISCORD_ALLOWED
 			DiscordClient.changePresence(details, state, smallImageKey, hasStartTimestamp, endTimestamp);
 			return true;
@@ -34,7 +36,7 @@ class LegacyCompatFunctions
 		});
 
 		Lua_helper.add_callback(lua, "getGlobalFromScript", function(luaFile:String, global:String) {
-			StructurePsychOld.warnLegacyLuaUsage('getGlobalFromScript(luaFile, global)', 'callScript(...) or shared variables with setOnLuas/setOnScripts');
+			if (enableWarnings) StructurePsychOld.warnLegacyLuaUsage('getGlobalFromScript(luaFile, global)', 'callScript(...) or shared variables with setOnLuas/setOnScripts');
 			var script:FunkinLua = findSiblingScript(funk, luaFile);
 			if(script == null || script.lua == null || global == null) return null;
 
@@ -45,7 +47,7 @@ class LegacyCompatFunctions
 		});
 
 		Lua_helper.add_callback(lua, "setGlobalFromScript", function(luaFile:String, global:String, value:Dynamic) {
-			StructurePsychOld.warnLegacyLuaUsage('setGlobalFromScript(luaFile, global, value)', 'setOnLuas(...) or setOnScripts(...)');
+			if (enableWarnings) StructurePsychOld.warnLegacyLuaUsage('setGlobalFromScript(luaFile, global, value)', 'setOnLuas(...) or setOnScripts(...)');
 			var script:FunkinLua = findSiblingScript(funk, luaFile);
 			if(script == null || script.lua == null || global == null) return false;
 

@@ -1095,6 +1095,7 @@ else // Para canciones normales, buscar en data/
     }
     #end
 }
+#end
 		
 		addMobileControls();
 		mobileControls.instance.visible = true;

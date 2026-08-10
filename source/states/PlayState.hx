@@ -1034,27 +1034,67 @@ class PlayState extends MusicBeatState
 			}
 			#end
 		}
-		else // Para canciones normales, buscar en data/
-		{
-			for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'data/$songName/'))
-				#if linux
-				for (file in CoolUtil.sortAlphabetically(Paths.readDirectory(folder)))
-				#else
-				for (file in Paths.readDirectory(folder))
-				#end
-				{
-					#if LUA_ALLOWED
-					if(file.toLowerCase().endsWith('.lua'))
-						new FunkinLua(folder + file);
-					#end
-
-					#if HSCRIPT_ALLOWED
-					if(file.toLowerCase().endsWith('.hx'))
-						initHScript(folder + file);
-					#end
-				}
-		}
-		#end
+else // Para canciones normales, buscar en data/
+{
+    var songPathLower:String = songName.toLowerCase();
+    var loadedAnyScript:Bool = false;
+    
+    #if MODS_ALLOWED
+    var modsList:Array<String> = Mods.getModDirectories();
+    
+    for (modFolder in modsList)
+    {
+        var pathsToTry:Array<String> = [
+            modFolder + 'data/' + songPathLower + '/',
+            modFolder + 'data/' + songName + '/'
+        ];
+        
+        var uniquePaths:Array<String> = [];
+        for (path in pathsToTry)
+        {
+            if (uniquePaths.indexOf(path) == -1)
+                uniquePaths.push(path);
+        }
+        
+        for (path in uniquePaths)
+        {
+            #if sys
+            if (sys.FileSystem.exists(path) && sys.FileSystem.isDirectory(path))
+            #else
+            if (AssetLoader.exists(path, DIRECTORY))
+            #end
+            {
+                #if sys
+                var files:Array<String> = sys.FileSystem.readDirectory(path);
+                #else
+                var files:Array<String> = Paths.readDirectory(path);
+                #end
+                
+                for (file in files)
+                {
+                    var fullPath:String = path + file;
+                    
+                    #if LUA_ALLOWED
+                    if (file.toLowerCase().endsWith('.lua'))
+                    {
+                        new FunkinLua(fullPath);
+                        loadedAnyScript = true;
+                    }
+                    #end
+                    
+                    #if HSCRIPT_ALLOWED
+                    if (file.toLowerCase().endsWith('.hx'))
+                    {
+                        initHScript(fullPath);
+                        loadedAnyScript = true;
+                    }
+                    #end
+                }
+            }
+        }
+    }
+    #end
+}
 		
 		addMobileControls();
 		mobileControls.instance.visible = true;
@@ -2569,6 +2609,12 @@ private function generateSong():Void
             var noteType: String = !Std.isOfType(songNotes[3], String) ? Note.defaultNoteTypes[songNotes[3]] : songNotes[3];
             if (Math.isNaN(holdLength))
                 holdLength = 0.0;
+
+        var songLengthMs:Float = songLength;
+        if (songLengthMs > 0 && spawnTime > songLengthMs + 500)
+        {
+            continue;
+        }
 
             var gottaHitNote:Bool = (songNotes[1] < totalColumns);
             var mustPress:Bool = playOpponent ? !gottaHitNote : gottaHitNote;
@@ -4135,25 +4181,6 @@ if (startedCountdown && !paused)
 	public function endSong()
 	{
 		mobileControls.instance.visible = #if !android touchPad.visible = #end false;
-		//Should kill you if you tried to cheat
-		if(!startingSong)
-		{
-			notes.forEachAlive(function(daNote:Note)
-			{
-				if(daNote.strumTime < songLength - Conductor.safeZoneOffset)
-					health -= 0.05 * healthLoss;
-			});
-
-			for (daNote in unspawnNotes)
-			{
-				if(daNote != null && daNote.strumTime < songLength - Conductor.safeZoneOffset)
-					health -= 0.05 * healthLoss;
-			}
-
-			if(doDeathCheck()) {
-				return false;
-			}
-		}
 
 		if (timeBar != null) timeBar.visible = false;
 		timeTxt.visible = false;

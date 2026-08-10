@@ -743,25 +743,27 @@ class PlayState extends MusicBeatState
 			}
 		}
 		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
-		// "SCRIPTS FOLDER" SCRIPTS
-		for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'scripts/'))
-			#if linux
-			for (file in CoolUtil.sortAlphabetically(Paths.readDirectory(folder)))
-			#else
-			for (file in Paths.readDirectory(folder))
-			#end
-			{
-				#if LUA_ALLOWED
-				if(file.toLowerCase().endsWith('.lua'))
-					new FunkinLua(folder + file);
-				#end
+    // "SCRIPTS FOLDER" SCRIPTS
+    for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'scripts/'))
+    {
+        #if linux
+        for (file in CoolUtil.sortAlphabetically(Paths.readDirectory(folder)))
+        #else
+        for (file in Paths.readDirectory(folder))
+        #end
+        {
+            #if LUA_ALLOWED
+            if(file.toLowerCase().endsWith('.lua'))
+                new FunkinLua(folder + file);
+            #end
 
-				#if HSCRIPT_ALLOWED
-				if(file.toLowerCase().endsWith('.hx'))
-					initHScript(folder + file);
-				#end
-			}
-		#end
+            #if HSCRIPT_ALLOWED
+            if(file.toLowerCase().endsWith('.hx'))
+                initHScript(folder + file);
+            #end
+        }
+    }
+#end 
 			
 		var camPos:FlxPoint = FlxPoint.get(girlfriendCameraOffset[0], girlfriendCameraOffset[1]);
 		if(gf != null)

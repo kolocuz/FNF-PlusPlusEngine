@@ -998,44 +998,42 @@ class PlayState extends MusicBeatState
 		eventsPushed = null;
 
 		// SONG SPECIFIC SCRIPTS
-		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
-		// Para canciones de StepMania/NotITG, buscar scripts en la carpeta songs/
-		if (isStepManiaLevel() && customAudioPath != null)
-		{
-			#if sys
-			// Extraer la ruta de la carpeta de la canción de StepMania
-			var smFolder:String = haxe.io.Path.directory(customAudioPath);
-			
-			if (sys.FileSystem.exists(smFolder))
-			{
-				var files:Array<String> = sys.FileSystem.readDirectory(smFolder);
-				
-				for (file in files)
-				{
-					#if LUA_ALLOWED
-					if(file.toLowerCase().endsWith('.lua'))
-					{
-						trace('Loading SM Lua script: $file');
-						new FunkinLua(smFolder + '/' + file);
-					}
-					#end
+#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
+if (isStepManiaLevel() && customAudioPath != null)
+{
+    #if sys
+    var smFolder:String = haxe.io.Path.directory(customAudioPath);
+    
+    if (sys.FileSystem.exists(smFolder))
+    {
+        var files:Array<String> = sys.FileSystem.readDirectory(smFolder);
+        
+        for (file in files)
+        {
+            #if LUA_ALLOWED
+            if(file.toLowerCase().endsWith('.lua'))
+            {
+                trace('Loading SM Lua script: $file');
+                new FunkinLua(smFolder + '/' + file);
+            }
+            #end
 
-					#if HSCRIPT_ALLOWED
-					if(file.toLowerCase().endsWith('.hx'))
-					{
-						trace('Loading SM HScript: $file');
-						initHScript(smFolder + '/' + file);
-					}
-					#end
-				}
-			}
-			else
-			{
-				trace('SM folder not found: $smFolder');
-			}
-			#end
-		}
-else // Para canciones normales, buscar en data/
+            #if HSCRIPT_ALLOWED
+            if(file.toLowerCase().endsWith('.hx'))
+            {
+                trace('Loading SM HScript: $file');
+                initHScript(smFolder + '/' + file);
+            }
+            #end
+        }
+    }
+    else
+    {
+        trace('SM folder not found: $smFolder');
+    }
+    #end
+}
+else
 {
     var songPathLower:String = songName.toLowerCase();
     var loadedAnyScript:Bool = false;
@@ -1046,8 +1044,10 @@ else // Para canciones normales, buscar en data/
     for (modFolder in modsList)
     {
         var pathsToTry:Array<String> = [
-            modFolder + 'data/' + songPathLower + '/',
-            modFolder + 'data/' + songName + '/'
+            Paths.modFolders('data/' + songPathLower + '/'),
+            Paths.modFolders('data/' + songName + '/'),
+            Paths.mods('$modFolder/data/$songPathLower/'),  // Добавьте этот путь
+            Paths.mods('$modFolder/data/$songName/')        // И этот
         ];
         
         var uniquePaths:Array<String> = [];
@@ -1059,12 +1059,16 @@ else // Para canciones normales, buscar en data/
         
         for (path in uniquePaths)
         {
+            trace('Проверяю путь: $path'); // Отладка
+            
             #if sys
             if (sys.FileSystem.exists(path) && sys.FileSystem.isDirectory(path))
             #else
             if (AssetLoader.exists(path, DIRECTORY))
             #end
             {
+                trace('Папка найдена: $path'); // Отладка
+                
                 #if sys
                 var files:Array<String> = sys.FileSystem.readDirectory(path);
                 #else
@@ -1074,10 +1078,12 @@ else // Para canciones normales, buscar en data/
                 for (file in files)
                 {
                     var fullPath:String = path + file;
+                    trace('Найден файл: $fullPath'); // Отладка
                     
                     #if LUA_ALLOWED
                     if (file.toLowerCase().endsWith('.lua'))
                     {
+                        trace('Загружаю Lua: $fullPath');
                         new FunkinLua(fullPath);
                         loadedAnyScript = true;
                     }
@@ -1086,11 +1092,16 @@ else // Para canciones normales, buscar en data/
                     #if HSCRIPT_ALLOWED
                     if (file.toLowerCase().endsWith('.hx'))
                     {
+                        trace('Загружаю HScript: $fullPath');
                         initHScript(fullPath);
                         loadedAnyScript = true;
                     }
                     #end
                 }
+            }
+            else
+            {
+                trace('Папка НЕ найдена: $path'); // Отладка
             }
         }
     }

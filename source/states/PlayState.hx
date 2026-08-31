@@ -1003,109 +1003,75 @@ if (isStepManiaLevel() && customAudioPath != null)
 {
     #if sys
     var smFolder:String = haxe.io.Path.directory(customAudioPath);
-    
     if (sys.FileSystem.exists(smFolder))
     {
         var files:Array<String> = sys.FileSystem.readDirectory(smFolder);
-        
         for (file in files)
         {
+            var fullPath:String = smFolder + '/' + file;
+            var lower:String = file.toLowerCase();
             #if LUA_ALLOWED
-            if(file.toLowerCase().endsWith('.lua'))
-            {
-                trace('Loading SM Lua script: $file');
-                new FunkinLua(smFolder + '/' + file);
-            }
+            if (lower.endsWith('.lua')) new FunkinLua(fullPath);
             #end
-
             #if HSCRIPT_ALLOWED
-            if(file.toLowerCase().endsWith('.hx'))
-            {
-                trace('Loading SM HScript: $file');
-                initHScript(smFolder + '/' + file);
-            }
+            if (lower.endsWith('.hx')) initHScript(fullPath);
             #end
         }
-    }
-    else
-    {
-        trace('SM folder not found: $smFolder');
     }
     #end
 }
 else
 {
-    var songPathLower:String = songName.toLowerCase();
-    var loadedAnyScript:Bool = false;
+    var songPath:String = songName.toLowerCase();
+    var currentMod:String = Mods.currentModDirectory;
+    var paths:Array<String> = [];
     
-    #if MODS_ALLOWED
-    var modsList:Array<String> = Mods.getModDirectories();
-    
-    for (modFolder in modsList)
+    if (currentMod != null && currentMod.length > 0)
     {
-        var pathsToTry:Array<String> = [
-            Paths.modFolders('data/' + songPathLower + '/'),
-            Paths.modFolders('data/' + songName + '/'),
-            Paths.mods('$modFolder/data/$songPathLower/'),  // Добавьте этот путь
-            Paths.mods('$modFolder/data/$songName/')        // И этот
-        ];
-        
-        var uniquePaths:Array<String> = [];
-        for (path in pathsToTry)
-        {
-            if (uniquePaths.indexOf(path) == -1)
-                uniquePaths.push(path);
-        }
-        
-        for (path in uniquePaths)
-        {
-            trace('Проверяю путь: $path'); // Отладка
-            
-            #if sys
-            if (sys.FileSystem.exists(path) && sys.FileSystem.isDirectory(path))
-            #else
-            if (AssetLoader.exists(path, DIRECTORY))
-            #end
-            {
-                trace('Папка найдена: $path'); // Отладка
-                
-                #if sys
-                var files:Array<String> = sys.FileSystem.readDirectory(path);
-                #else
-                var files:Array<String> = Paths.readDirectory(path);
-                #end
-                
-                for (file in files)
-                {
-                    var fullPath:String = path + file;
-                    trace('Найден файл: $fullPath'); // Отладка
-                    
-                    #if LUA_ALLOWED
-                    if (file.toLowerCase().endsWith('.lua'))
-                    {
-                        trace('Загружаю Lua: $fullPath');
-                        new FunkinLua(fullPath);
-                        loadedAnyScript = true;
-                    }
-                    #end
-                    
-                    #if HSCRIPT_ALLOWED
-                    if (file.toLowerCase().endsWith('.hx'))
-                    {
-                        trace('Загружаю HScript: $fullPath');
-                        initHScript(fullPath);
-                        loadedAnyScript = true;
-                    }
-                    #end
-                }
-            }
-            else
-            {
-                trace('Папка НЕ найдена: $path'); // Отладка
-            }
-        }
+        paths.push(Paths.mods('$currentMod/data/$songPath/'));
+        paths.push(Paths.mods('$currentMod/data/$songName/'));
     }
-    #end
+    
+    paths.push(Paths.modFolders('data/$songPath/'));
+    
+    for (path in paths)
+    {
+        #if sys
+        if (sys.FileSystem.exists(path) && sys.FileSystem.isDirectory(path))
+        {
+            var files:Array<String> = sys.FileSystem.readDirectory(path);
+            for (file in files)
+            {
+                var fullPath:String = path + file;
+                var lower:String = file.toLowerCase();
+                #if LUA_ALLOWED
+                if (lower.endsWith('.lua')) new FunkinLua(fullPath);
+                #end
+                #if HSCRIPT_ALLOWED
+                if (lower.endsWith('.hx')) initHScript(fullPath);
+                #end
+            }
+            break;
+        }
+        #else
+        if (AssetLoader.exists(path, DIRECTORY))
+        {
+            var files:Array<String> = Paths.readDirectory(path);
+            for (file in files)
+            {
+                var fullPath:String = path + file;
+                var lower:String = file.toLowerCase();
+                #if LUA_ALLOWED
+                if (lower.endsWith('.lua')) new FunkinLua(fullPath);
+                #end
+                #if HSCRIPT_ALLOWED
+                if (lower.endsWith('.hx')) initHScript(fullPath);
+                #end
+            }
+            break;
+        }
+        #end
+    }
 }
 #end
 		
